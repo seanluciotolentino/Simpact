@@ -1,0 +1,1 @@
+matlab -nodisplay -nodesktop -minimize -r run_simpact

@@ -1,0 +1,16 @@
+A description of all the folders and files you'll find in the SIMPACT folder:
+
+(1) ~archive: A run log of SIMPACT. This is used for bug reporting.
+(2) data: Data sources used by SIMPACT and SIMPACT scripts
+(3) fei: Matlab scripts created by fei
+(4) lib: Functions used by SIMPACT
+(5) lucio: Matlab scripts created by lucio
+(6) MATLAB: Files for launching SIMPACT GUI
+(7) old: Old shell scripts that will be deleted if not claimed soon...
+(8) Productions: Published or unpublished papers, presentations, and icons
+
+Files in the main folder:
+
+(1) RUN_SIMPACT.bat:  Executable bat file to launch SIMPACT GUI
+(2) run_simpact.m: Matlab script for launching GUI
+(3) SIMPACT.html: Old installation documentation-- this needs to change...
