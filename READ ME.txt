@@ -6,8 +6,7 @@ A description of all the folders and files you'll find in the SIMPACT folder:
 (4) lib: Functions used by SIMPACT
 (5) lucio: Matlab scripts created by lucio
 (6) MATLAB: Files for launching SIMPACT GUI
-(7) old: Old shell scripts that will be deleted if not claimed soon...
-(8) Productions: Published or unpublished papers, presentations, and icons
+(7) Productions: Published or unpublished papers, presentations, and icons
 
 Files in the main folder:
 

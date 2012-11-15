@@ -167,3 +167,5 @@ pip-log.txt
 lucio/*
 fei/*
 wim/*
+~archive/*
+*.m~  #files on hold

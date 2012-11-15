@@ -1,0 +1,893 @@
+function varargout = spData(fcn, varargin)
+%SPTOOLS SIMPACT tools.
+%
+%   See also SIMPACT, spRun, modelHIV.
+
+% File settings:
+%#function spData_handle, spData_menu, spData_edit, spData_intExpLinear
+%#function spData_expLinear, spData_meshgrid, spData_interp1
+%#function spData_resetRand, spData_rand0toInf
+%#function spData_weibull, spData_weibullEventTime
+%#ok<*DEFNU>
+%#ok<*UNRCH>
+
+% Copyright 2009-2010 by Hummeling Engineering (www.hummeling.com)
+
+if nargin == 0
+    spData_test
+    return
+end
+
+[varargout{1:nargout}] = eval([mfilename, '_', fcn, '(varargin{:})']);
+   
+end
+% 	command = get(actionEvent, 'ActionCommand');
+% 	switch command
+% 		case 'Formed Relations'
+% 			[ok, msg] = spData_formedRelations(SDS);
+% 			if ~ok
+% 				handles.fail(msg)
+% 			end
+% 			
+% 		case 'HIV Prevalence & Incidence'
+% 			[ok, msg] = spData_prevalenceIncidence(SDS);
+% 			if ~ok
+% 				handles.fail(msg)
+% 			end
+% 		
+% 		case 'Partnership Formation Scatter'
+% 			[ok, msg] = spData_formationScatter(SDS);
+% 			if ~ok
+% 				handles.fail(msg)
+% 			end
+% 			
+% 		case 'Concurrency Point Prevalence'
+% 			[ok, msg] = spData_concurrencyPrevalence(SDS);
+% 			if ~ok
+% 				handles.fail(msg)
+% 			end
+% 			
+% 		case 'Demographics'
+% 			[ok, msg] = spData_Demographics(SDS);
+% 			if ~ok
+% 				handles.fail(msg)
+% 			end
+% 			
+% 		 case 'Demographic and Transmission Overview'
+% 			[ok, msg] = spData_demoAndTrans(SDS);
+% 			if ~ok
+% 				handles.fail(msg)
+% 			end
+% 			
+% 		otherwise
+% 			handles.fail('Warning: %s not implemented yet.', command)
+% 			return
+% 	end
+
+
+
+%% individualData
+function [ok, msg] = spData_individualData(SDS, sex, idx)
+
+ok = false;
+msg = '';
+
+S = SDS.([sex, 's']);
+fields = fieldnames(S);
+idx = min(idx, numel(S.(fields{end})));
+if idx == 0
+    msg = 'Warning: no individual data available';
+    return
+end
+
+figPrp.Color = 'w';
+figPrp.Name = capitalise(sprintf('Individual %s Data', sex));
+figPrp.ToolBar = 'figure';
+hFig = fig(figPrp);
+
+axesPrp.Parent = hFig;
+axesPrp.Visible = 'off';
+hAxes = axes(axesPrp);
+
+%textPrp.FontName = 'FixedWidth';
+textPrp.Parent = hAxes;
+boldPrp = textPrp;
+boldPrp.FontWeight = 'bold';
+text(1, 0, sprintf('%s %d', sex, idx), boldPrp)
+
+daysPerYear = spTools('daysPerYear');
+
+for ii = 1 : numel(fields)
+    text(0, -ii, field2str(fields{ii}), boldPrp)
+    
+    value = double(S.(fields{ii})(idx));
+    if ~isfinite(value)
+        text(2, -ii, 'unknown', textPrp)
+        continue
+    end
+    
+    switch fields{ii}
+        case {'born', 'deceased'}
+            text(2, -ii, datestr(datenum(SDS.start_date) + value*daysPerYear), textPrp)
+        otherwise
+            text(2, -ii, num2str(value), textPrp)
+    end
+end
+
+
+% ******* Number of Relations *******
+relationCount = sum(SDS.relations.ID(:, SDS.index.(sex)) == idx);
+ii = ii + 1;
+text(0, -ii, 'number of relations', boldPrp)
+text(2, -ii, num2str(relationCount), textPrp)
+
+
+% ******* Secondary Infections *******
+switch sex
+    case 'male'
+        secondaryInfections = sum(SDS.females.HIV_source == idx);
+    case 'female'
+        secondaryInfections = sum(SDS.males.HIV_source == idx);
+end
+ii = ii + 1;
+text(0, -ii, 'secondary infections', boldPrp)
+text(2, -ii, num2str(secondaryInfections), textPrp)
+
+
+set(hAxes, 'XLim', [0 4], 'YLim', [-ii 0])
+
+
+% ******* Controls *******
+sexPrp.Callback = @spData_individualData_callback;
+sexPrp.Parent = hFig;
+sexPrp.Position = [4 24 60 24];
+sexPrp.String = {'male', 'female'};
+sexPrp.Style = 'popupmenu';
+sexPrp.Value = find(strcmp(sexPrp.String, sex));
+hSex = uicontrol(sexPrp);
+
+idxPrp = sexPrp;
+idxPrp.Position = [4 0 60 24];
+idxPrp.String = num2cell(1 : numel(S.(fields{1})));
+idxPrp.Value = idx;
+hIdx = uicontrol(idxPrp);
+
+figure(hFig)
+
+ok = true;
+
+
+%% individualData_callback
+    function spData_individualData_callback(~, ~)
+        
+        sexIdx = get(hSex, 'Value');
+        switch sex
+            case 'male'
+                set(hSex, 'Value', 1)
+            otherwise
+                set(hSex, 'Value', 2)
+        end
+        spData_individualData(SDS, ...
+            sexPrp.String{sexIdx}, get(hIdx, 'Value'));
+    end
+end
+
+
+%% formedRelations
+function [ok, msg] = spData_formedRelations(SDS)
+
+ok = false;
+msg = '';
+
+if isempty(SDS.relations.ID)
+    msg = 'Warning: no relations available';
+    return
+end
+
+timeRange = ceil((datenum(SDS.end_date) - datenum(SDS.start_date))/spTools('daysPerYear'));
+
+figPrp.Name = 'Formed Relations';
+figPrp.ToolBar = 'figure';
+hFig = fig(figPrp);
+
+
+% ******* Relation Duration *******
+axesPrp.Box = 'on';
+axesPrp.Parent = hFig;
+axesPrp.Position = [.1 .6 .85 .35];
+axesPrp.Units = 'normalized';
+% axesPrp.XGrid = 'on';
+% axesPrp.YGrid = 'on';
+hAxes = axes(axesPrp);
+
+
+idx = isfinite(SDS.relations.time(:, SDS.index.start));
+relStart = SDS.relations.time(idx, SDS.index.start);
+relStop = SDS.relations.time(idx, SDS.index.stop);
+entryCount = numel(relStart);
+stoppedIdx = relStop ~= Inf;
+rel = [
+    ones(entryCount, 1)
+    -ones(sum(stoppedIdx), 1)
+    ];
+[time, sortIdx] = sort([
+    relStart
+    relStop(stoppedIdx)
+    ]);
+%stoppedIdx = relStop ~= Inf;
+
+duration = relStop - relStart;
+duration(duration == Inf) = [];
+
+relStop(relStop == Inf) = 2*timeRange;
+
+plot(hAxes, [find(idx), find(idx)]', [relStart, relStop]', '.-')
+xlabel(hAxes, 'relation')
+ylabel(hAxes, 'duration [years]')
+set(hAxes, 'YLim', [0, timeRange])
+grid(hAxes, 'on')
+
+
+%txtPrp.BackgroundColor = 'w';
+txtPrp.HorizontalAlign = 'right';
+txtPrp.Margin = 2;
+txtPrp.Parent = hAxes;
+txtPrp.Units = 'normalized';
+text(1, -.18, sprintf('mean %g years', mean(duration)), txtPrp)
+
+
+% ******* Number of Relations *******
+axesPrp.Position(2) = .1;
+hAxes = axes(axesPrp);
+relationCount = cumsum(rel(sortIdx));
+
+linePrp.Color = [12 14 12]/15;
+linePrp.Marker = '.';
+linePrp.MarkerEdgeColor = [0 10 0]/15;
+linePrp.Parent = hAxes;
+line(time, relationCount, linePrp)
+xlabel(hAxes, 'time [years]')
+ylabel(hAxes, 'number of relations')
+set(hAxes, 'XLim', [0, timeRange])
+grid(hAxes, 'on')
+
+
+txtPrp.Parent = hAxes;
+
+text(1, -.18, sprintf('mean %g', mean(relationCount)), txtPrp)
+
+
+zoom(hFig, 'on')
+
+
+% ******* Add Print Buttons *******
+spData_print(hFig)
+
+
+figure(hFig)
+
+ok = true;
+end
+
+%% demoAndTrans
+function [ok, msg] =spData_demoAndTrans(SDS)
+
+ok = false;
+msg = '';
+
+
+figPrp.Name = 'Demographic and Transmission Overview';
+hFig = fig(figPrp);
+
+daysPerYear = spTools('daysPerYear');
+t =floor((datenum(SDS.end_date)-datenum(SDS.start_date))/daysPerYear);
+      
+born = [SDS.males.born, SDS.females.born];
+death = [SDS.males.deceased, SDS.females.deceased];
+life = death-born;
+life = life(~isnan(life));
+table.initial = sum(born<=0);
+table.total = sum(~isnan(born));
+table.ave_life = mean(life);
+table.med_life = median(life);
+table.newborns_per_yr = sum([SDS.males.born, SDS.females.born]>=0)/t;
+timeHIVpos = [SDS.males.HIV_positive, SDS.females.HIV_positive];
+sortHIVpos = sort(timeHIVpos(~isnan(timeHIVpos)));
+
+death(isnan(death)) = t+1;
+alive = zeros(1,t*2+1);
+prev = zeros(1,t*2+1);
+adultPrev = zeros(1,t*2+1);
+relations = zeros(1,t*2+1);
+ti = 0.5:0.5:t;
+
+for i = ti
+
+alive(i*2+1) = sum(born<i&death>i);
+prev(i*2+1) = sum(timeHIVpos<i&death>i)/alive(i*2);
+adult = sum(born<(i-15)&death>i);
+adultPrev(i*2+1) =  sum(timeHIVpos<i&death>i)/adult;
+relations(i*2+1) = sum(SDS.relations.time(:,1)<i&SDS.relations.time(:,2)>i)/adult;
+
+end
+table.population_change = alive(end);
+table.prevalence = prev;
+table.adult_prev = adultPrev;
+table.alive = alive;
+table.concurrency = relations;
+table.time = [0 ti];
+
+pop = SDS.initial_number_of_males+SDS.initial_number_of_females;
+
+newborns = born(born>0);
+mothers = [SDS.males.mother SDS.females.mother];
+mothers = mothers(mothers>0);
+table.pregnant_age = zeros(1,length(mothers));
+for i = 1:length(mothers)
+   table.pregnant_age(i) = newborns(i) - SDS.females.born(mothers(i));
+end
+
+table.age_at_infection = [SDS.males.HIV_positive SDS.females.HIV_positive] - ...
+    [SDS.males.born SDS.females.born];
+table.age_at_infection = table.age_at_infection(table.age_at_infection>=0);
+
+
+
+
+name = sprintf('Pop_%d_Time_%d_yrs.pdf', pop,t );
+subplot(4,2,1); plot(table.time,table.alive); title('Population Size');
+subplot(4,2,2); plot(table.time,table.concurrency); title('Average Concurrent Relationships');
+subplot(4,2,3); plot(table.time,table.prevalence); title('Prevalence');
+subplot(4,2,4); plot(table.time,table.adult_prev); title('Prevalence in Adults (>= 15 yrs)');
+subplot(4,2,5); hist(table.pregnant_age); title('Age at children delivery');
+subplot(4,2,6); hist(t-born,20); title('Age distribution at the end of simulation');
+subplot(4,2,7); hist(table.age_at_infection,20);title('Age distribution at infection');
+subplot(4,2,8);hist([SDS.males.HIV_positive SDS.females.HIV_positive],30); title('New infections');
+
+
+
+waitTime = Inf(1, SDS.number_of_males+SDS.number_of_females);
+newIndex = born<=t-15&born>=-15;
+newAdult = sum(newIndex);
+count = 0;
+for i = 1:SDS.number_of_males
+    ti = min(SDS.relations.time(SDS.relations.ID(:,1)==i,1)) - (born(i)+15);
+    if isempty(ti)
+        ti = min(death(i),t) - born(i)-15;
+    else count = count+1;
+    end
+    if newIndex(i)
+        waitTime(i)=ti;
+    end
+end
+
+
+
+for i = 1:SDS.number_of_females
+    ti = min(SDS.relations.time(SDS.relations.ID(:,2)==i,1))- born(i+SDS.number_of_males)-15;
+    
+    if isempty(ti)
+        ti = min(death(i+SDS.number_of_males),t) - born(i+SDS.number_of_males)-15;
+    else count = count+1;
+    end
+    if newIndex(i+SDS.number_of_males)
+        waitTime(i+SDS.number_of_males)=ti;
+    end
+end
+
+table.waitTime = sum(waitTime(~isinf(waitTime)))/newAdult;
+table.isolate = count;
+
+tfree = zeros(1, SDS.number_of_males+SDS.number_of_females);
+for i =1:SDS.number_of_males
+    times = SDS.relations.time(SDS.relations.ID(:,1)==i,1:2);
+    times(isinf(times(:,2)),2) = t;
+    endTime = min(death(i),t).*[1 1];
+    times = [times; endTime];
+    for i = 1:(length(times(:,1))-1)
+        tstop = times(i,2);
+        tnext = times(i+1,1);
+        if tnext>= tstop
+            tfree(i) = tfree(i)+tnext-tstop;
+        end
+    end
+      
+end
+
+for i =1:SDS.number_of_females
+    times = SDS.relations.time(SDS.relations.ID(:,2)==i,1:2);
+    times(isinf(times(:,2)),2) = t;
+    endTime = min(death(i+SDS.number_of_males),t).*[1 1];
+    times = [times; endTime];
+    for i = 1:(length(times(:,1))-1)
+        tstop = times(i,2);
+        tnext = times(i+1,1);
+        if tnext>= tstop
+            tfree(i+SDS.number_of_males) = tfree(i+SDS.number_of_males)+tnext-tstop;
+        end
+    end
+      
+end
+
+table.average_isolate_time = sum(tfree)/sum(born>=-15);
+
+relations = sum(SDS.relations.ID(:,1)>0);
+in = 0;
+out =0;
+for i = 1: relations
+   male = int16(SDS.relations.ID(i,1));
+   female = int16(SDS.relations.ID(i,2));
+   if SDS.males.community(male)==SDS.females.community(female)
+       in = in+1;
+   else out = out +1;
+   end
+    
+end
+
+community = max(SDS.males.community);
+
+table.in_community_relations =[in in/community];
+table.out_community_relations = [out out/(community*(community-1)/2)/2];
+endedRelations = ~isinf(SDS.relations.time(:,2))&~isnan(SDS.relations.time(:,2));
+table.average_relations_duration = sum(SDS.relations.time(endedRelations,2)-SDS.relations.time(endedRelations,1))/relations;
+
+figure(hFig)
+
+ok = true;
+
+end
+%% prevalenceIncidence
+function [data, msg] = spData_prevalence(SDS)
+
+msg = '';
+
+if isempty(SDS.males.HIV_positive)
+    msg = 'Warning: no population available';
+    return
+end
+
+%NIU timeRange = ceil((datenum(SDS.end_date) - datenum(SDS.start_date))/spTools('daysPerYear'));
+
+figPrp.Name = 'HIV Prevalence & Incidence';
+figPrp.ToolBar = 'figure';
+hFig = fig(figPrp);
+
+
+% ******* HIV Prevalence *******
+malePosIdx = ~isnan(SDS.males.HIV_positive);
+femalePosIdx = ~isnan(SDS.females.HIV_positive);
+maleMort = SDS.males.deceased(malePosIdx);
+femaleMort = SDS.females.deceased(femalePosIdx);
+maleMortIdx = ~isnan(maleMort);
+femaleMortIdx = ~isnan(femaleMort);
+[posTime, posIdx] = sort([
+    SDS.males.HIV_positive(malePosIdx)'
+    SDS.females.HIV_positive(femalePosIdx)'
+    maleMort(maleMortIdx)'
+    femaleMort(femaleMortIdx)'
+    ]);
+posCount = [
+    ones(sum(malePosIdx), 1)
+    ones(sum(femalePosIdx), 1)
+    -ones(sum(maleMortIdx), 1)
+    -ones(sum(femaleMortIdx), 1)
+    ];
+posCumSum = cumsum(posCount(posIdx));
+
+[popTime, popIdx] = sort([
+    0
+    maleMort(maleMortIdx)'
+    femaleMort(femaleMortIdx)'
+    ]);
+popCount = [
+    SDS.number_of_males + SDS.number_of_females
+    -ones(sum(maleMortIdx), 1)
+    -ones(sum(femaleMortIdx), 1)
+    ];
+popCumSum = cumsum(popCount(popIdx));
+
+prevalence = posCumSum./interp1(popTime, popCumSum, posTime, 'nearest', popCumSum(end));    % TEMP!!!
+data = prevalence;
+end
+
+function [ok, msg] = spData_incidence(SDS)
+
+
+% ******* HIV Incidence *******
+axesPrp.Position(2) = .1;
+%hAxes = axes(axesPrp);
+
+timeRange = ceil((datenum(SDS.end_date) - datenum(SDS.start_date))/spTools('daysPerYear'));
+
+% To estimate the incidence at fixed 'reporting times', with
+% fixed time windows
+
+ReportingInterval = 1; % Yearly HIV incidence estimates;
+ReportingTimes = ReportingInterval:ReportingInterval:timeRange;
+
+HIVincidence = NaN(1,length(ReportingTimes));
+HIVincidenceLL = NaN(1,length(ReportingTimes));
+HIVincidenceUL = NaN(1,length(ReportingTimes));
+alpha = 0.05;
+
+%NIU Allpositives = sort([SDS.males.HIV_positive, SDS.females.HIV_positive]);
+
+for ii = 1 : numel(ReportingTimes)
+    StockTaking=ReportingTimes(ii);
+    %NIU ScaledInfectionTimes = sort(StockTaking - Allpositives);
+    SW = StockTaking - ReportingInterval; % SW is start of window;
+    EW = StockTaking; % EW is end of window;
+    
+    eligibleM = (SDS.males.born <= EW) & (SDS.males.HIV_positive > SW | isnan(SDS.males.HIV_positive))...
+        & (SDS.males.deceased > SW | isnan(SDS.males.deceased));
+    eligibleF = (SDS.females.born <= EW) & (SDS.females.HIV_positive > SW | isnan(SDS.females.HIV_positive))...
+        & (SDS.females.deceased > SW | isnan(SDS.females.deceased));
+
+    birthsM = SDS.males.born(eligibleM);
+    birthsF = SDS.females.born(eligibleF);
+    conversionM = SDS.males.HIV_positive(eligibleM);
+    conversionF = SDS.females.HIV_positive(eligibleF);
+    deathM = SDS.males.deceased(eligibleM);
+    deathF = SDS.females.deceased(eligibleF);
+    
+    startM = max(SW,birthsM);
+    startF = max(SW,birthsF);
+    
+    endMintermed = min(conversionM, deathM);
+    endFintermed = min(conversionF, deathF);
+    endM = min(EW, endMintermed);
+    endF = min(EW, endFintermed);
+    
+    ExposureTimeM = sum(endM - startM);
+    ExposureTimeF = sum(endF - startF);
+    ExposureTime = ExposureTimeM + ExposureTimeF;
+    
+    Cases = (conversionM > SW & conversionM <= EW);
+    Cases = sum(Cases);
+    
+    HIVincidence(ii) = Cases / ExposureTime;
+    CasesLL = (1/2)*chi2inv(alpha/2, 2*Cases);
+    CasesUL = (1/2)*chi2inv(1-(alpha/2), 2*(Cases+1));
+    HIVincidenceLL(ii) = CasesLL / ExposureTime;
+    HIVincidenceUL(ii) = CasesUL / ExposureTime;
+
+end
+
+
+linePrp.Parent = hAxes;
+% line(newYear, incidence*100, linePrp)
+
+line(ReportingTimes, HIVincidence*100, linePrp, 'Color', 'r')    
+line(ReportingTimes, HIVincidenceLL*100, linePrp)  
+line(ReportingTimes, HIVincidenceUL*100, linePrp)  
+
+
+xlabel(hAxes, 'time [years]')
+ylabel(hAxes, 'HIV incidence [%]')
+set(hAxes, 'XLim', [0, timeRange])
+
+
+zoom(hFig, 'on')
+
+
+% ******* Add Print Buttons *******
+spData_print(hFig)
+
+
+figure(hFig)
+
+ok = true;
+end
+
+
+%% formationScatter
+function [data, msg] = spData_formationScatter(SDS)
+% Original code by Fei Meng, modified by Ralph
+
+msg = '';
+
+if isempty(SDS.relations.ID)
+    msg = 'Warning: no population available';
+    return
+end
+
+
+count = sum(SDS.relations.ID(:, SDS.index.male) ~= 0);
+maleAge = nan(1, count);
+femaleAge = nan(1, count);
+
+for ii = 1 : count
+    maleAge(ii) = SDS.relations.time(ii, SDS.index.start) - ...
+        SDS.males.born(SDS.relations.ID(ii, SDS.index.male));
+    femaleAge(ii) = SDS.relations.time(ii, SDS.index.start) - ...
+        SDS.females.born(SDS.relations.ID(ii, SDS.index.female));
+end
+
+data = [ maleAge' femaleAge'];
+
+end
+
+
+%% concurrencyPrevalence
+function [ok, msg] = spData_concurrencyPrevalence(SDS)
+
+ok = false;
+msg = '';
+
+if isempty(SDS.males) || isempty(SDS.females)
+    msg = 'Warning: no population available';
+    return
+end
+
+timeRange = ceil((datenum(SDS.end_date) - datenum(SDS.start_date))/spTools('daysPerYear'));
+
+figPrp.Name = 'Concurrency Point Prevalence';
+hFig = fig(figPrp);
+
+
+% ******* Male Concurrency Point Prevalence *******
+axesPrp.Box = 'on';
+axesPrp.Parent = hFig;
+axesPrp.Position = [.1 .6 .85 .35];
+axesPrp.Units = 'normalized';
+% axesPrp.XGrid = 'on';
+% axesPrp.YGrid = 'on';
+hAxes(1) = axes(axesPrp);
+
+
+
+ReportingInterval = .1;                  % yearly degree distibutions
+ReportingTimes = ReportingInterval : ReportingInterval : timeRange;
+N = numel(ReportingTimes);
+x_m_outmatrix = zeros(N, 1);
+x_f_outmatrix = zeros(N, 1);
+histo_mmatrix = zeros(N, 1);
+histo_fmatrix = zeros(N, 1);
+
+
+for ii = 1 : N
+    
+    ST = ReportingTimes(ii);            % stock taking
+    relationsIdx = ...
+        (SDS.relations.time(:, SDS.index.start) < ST) & ...
+        (SDS.relations.time(:, SDS.index.stop) >= ST);
+    
+    malePartners = SDS.relations.ID(relationsIdx, 1);
+    femalePartners = SDS.relations.ID(relationsIdx, 2);
+    unique_mp = unique(malePartners);
+    unique_fp = unique(femalePartners);
+    partners_m = nan(1, length(unique_mp));
+    partners_f = nan(1, length(unique_fp));
+    
+    for jj = 1 : length(unique_mp)
+        rel_mp = find(malePartners == unique_mp(jj));
+        partners_m(jj) = length(unique(femalePartners(rel_mp)));
+    end
+    for jj = 1 : length(unique_fp)
+        rel_fp = find(femalePartners == unique_fp(jj));
+        partners_f(jj) = length(unique(malePartners(rel_fp)));
+    end
+    x_m = 1 : max(partners_m);
+    x_f = 1 : max(partners_f);
+    [histo_m, x_m_out] = hist(partners_m, x_m);
+    [histo_f, x_f_out] = hist(partners_f, x_f);
+    
+    x_m_outmatrix(ii,1:length(x_m_out)) = x_m_out;
+    x_f_outmatrix(ii,1:length(x_f_out)) = x_f_out;
+    histo_mmatrix(ii,1:length(histo_m)) = histo_m / sum(histo_m);
+    histo_fmatrix(ii,1:length(histo_f)) = histo_f / sum(histo_f);
+    %{
+    NIU
+    %}
+    %figure(ii)
+    %bar(x_m_outmatrix{ii,:}, histo_mmatrix{ii,:})
+    % It's better to make a trellis plot;
+    
+end
+
+bar(hAxes(1), histo_mmatrix, 'stack')
+set(hAxes(1),'YLim',[0 1],'XLim',[0 size(histo_mmatrix,1)]);
+xlabel(hAxes(1), 'time [years]')
+ylabel(hAxes(1), 'Fraction')
+%legend(hAxes(1), '1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+legend(hAxes(1), num2cell(num2str((1 : size(histo_mmatrix, 2))')))
+
+
+% ******* Female Concurrency Point Prevalence *******
+
+axesPrp.Position(2) = .1;
+axesPrp.YLim = [0 1];
+hAxes(2) = axes(axesPrp);
+
+bar(hAxes(2), histo_fmatrix,'stack')
+set(hAxes(2),'YLim',[0 1],'XLim',[0 size(histo_fmatrix,1)]);
+xlabel(hAxes(2), 'time [years]')
+ylabel(hAxes(2), 'Fraction')
+%legend(hAxes(2), '1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+legend(hAxes(2), num2cell(num2str((1 : size(histo_fmatrix, 2))')))
+
+linkaxes(hAxes, 'x')
+zoom(hFig, 'on')
+figure(hFig)
+
+
+% ******* Add Print Buttons *******
+spData_print(hFig)
+
+
+ok = true;
+end
+
+
+%% Demographics
+function [ok, msg] = spData_Demographics(SDS)
+
+ok = false;
+msg = '';
+
+if isempty(SDS.males) || isempty(SDS.females)
+    msg = 'Warning: no population available';
+    return
+end
+
+timeRange = ceil((datenum(SDS.end_date) - datenum(SDS.start_date))/spTools('daysPerYear'));
+
+figPrp.Name = 'Demographics';
+figPrp.ToolBar = 'figure';
+hFig = fig(figPrp);
+
+% ******* Population size *******
+axesPrp.Box = 'on';
+axesPrp.Parent = hFig;
+axesPrp.Position = [.1 .6 .85 .35];
+axesPrp.Units = 'normalized';
+% axesPrp.XGrid = 'on';
+% axesPrp.YGrid = 'on';
+hAxes = axes(axesPrp);
+
+
+ReportingInterval = .1;                  % yearly degree distibutions
+ReportingTimes = ReportingInterval : ReportingInterval : timeRange;
+N = numel(ReportingTimes);
+population = zeros(N, 1);
+age_edges = 0:10:120;
+histo_matrix = zeros(N, 1);
+
+
+for ii = 1 : N
+    
+    ST = ReportingTimes(ii);            % stock taking
+    existM = SDS.males.born<=ST;
+    existF = SDS.females.born<=ST;
+    aliveM = (SDS.males.deceased>ST)|isnan(SDS.males.deceased);
+    aliveF = (SDS.females.deceased>ST)|isnan(SDS.females.deceased);
+    stockM = existM&aliveM;
+    stockF = existF&aliveF;
+    population(ii) = sum(stockM)+sum(stockF);
+    
+    agehist = histc(ST -[SDS.males.born(stockM) SDS.females.born(stockF)], age_edges);
+
+    histo_matrix(ii,1:length(agehist)) = agehist / sum(agehist);
+end
+    
+linePrp.Color = [12 14 12]/15;
+linePrp.Marker = '.';
+linePrp.MarkerEdgeColor = [0 10 0]/15;
+linePrp.Parent = hAxes;
+
+
+
+line(ReportingTimes, population, linePrp)
+xlabel(hAxes, 'time [years]')
+ylabel(hAxes, 'population size')
+set(hAxes, 'XLim', [0, timeRange])
+set(hAxes, 'YLim', [0, round(max(population))+10])
+
+
+% Age distribution
+axesPrp.Position(2) = .1;
+hAxes = axes(axesPrp);
+
+
+
+linePrp.Parent = hAxes;
+%axesPrp.YLim = [0 1];
+%axesPrp.Xlim = [0, timeRange];
+%set(hAxes, 'XLim', [0, timeRange])
+set(hAxes, 'Ylim', [0, 1])
+
+bar(hAxes, histo_matrix,'stack')
+
+set(hAxes,'YLim',[0 1]); %'XLim',[0 timeRange]);
+xlabel(hAxes, 'time [years]')
+ylabel(hAxes, 'Fraction')
+%legend(hAxes(2), '1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+legend(hAxes, '0-10', '10-20', '20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90-100',...
+    '100-110', '110-120'); %num2cell(num2str((1 : size(histo_matrix, 2))')))
+
+
+
+% line(newYear, incidence*100, linePrp)
+
+%set(hAxes, 'XLim', [0, timeRange])
+
+
+
+
+
+%linkaxes(hAxes, 'x')
+zoom(hFig, 'on')
+figure(hFig)
+
+
+% ******* Add Print Buttons *******
+spData_print(hFig)
+
+
+ok = true;
+end
+
+
+
+%% print
+function spData_print(hObject, varargin)
+
+if nargin == 1
+    spData_print_buttons
+    return
+end
+
+hFig = ancestor(hObject, 'figure');
+ext = get(hObject, 'String');
+
+filename = [get(hFig, 'Name'), '.', datestr(now, 30), '.', lower(ext)];
+filename = genfilename(filename);
+
+options = {hFig, '<DRIVER>', '-noui', '-painters', filename};
+
+switch ext
+    case 'EMF'
+        options{2} = '-dmeta';
+        
+    case 'EPS'
+        options{2} = '-depsc2';
+        
+    case 'PDF'
+        options{2} = '-dpdf';
+        
+    otherwise
+        return
+end
+
+print(options{:})
+fprintf(1, 'Saved as:\n%s\n', which(filename))
+
+
+%% print_buttons
+    function spData_print_buttons
+        
+        position = [1 1 40 24];
+        
+        if ispc
+            uicontrol(hObject, 'Callback', @spData_print, ...
+                'Position', position, 'String', 'EMF', 'Style', 'pushbutton', ...
+                'TooltipString', 'Save as Enhanced Meta File.')
+            position(1) = position(1) + position(3);
+        end
+        
+        uicontrol(hObject, 'Callback', @spData_print, ...
+            'Position', position, 'String', 'EPS', 'Style', 'pushbutton', ...
+            'TooltipString', 'Save as Encapsulated PostScript graphics.')
+        position(1) = position(1) + position(3);
+        
+        uicontrol(hObject, 'Callback', @spData_print, ...
+            'Position', position, 'String', 'PDF', 'Style', 'pushbutton', ...
+            'TooltipString', 'Save as Portable Document Format.')
+    end
+end
+
+
+%%
+function spData_
+
+end
