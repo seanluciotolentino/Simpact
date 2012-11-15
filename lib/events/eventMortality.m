@@ -83,14 +83,7 @@ end
         % ******* Variables & Constants *******
         P.false = false(SDS.number_of_males, SDS.number_of_females);
         age0 = -[SDS.males.born, SDS.females.born];
-        %P.rand = rand(1, elements, SDS.float).*exp(-(age0./P.scale).^P.shape);
-        %P.eventTimes = P.weibull(P.scale, P.shape, P.rand) - age0;
-        %P.rand = rand(1, elements, SDS.float).*(1 - exp(-(age0./P.scale).^P.shape));
         P.rand = rand(1, elements, SDS.float);
-        % P.eventTimes = P.weibull(P.scale, P.shape, P.rand);
-        % P.eventTimes(isnan(age0)) = NaN;
-        %P.eventTimes = (P.scale.^P.shape.*P.rand + age0.^P.shape).^(1./P.shape) - age0;
-        %P.eventTimes(isnan(P.eventTimes)) = Inf;
         P.eventTimes = inf(1,SDS.number_of_males+SDS.number_of_females, SDS.float);
         if ~P.enable
             return
