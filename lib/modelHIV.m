@@ -123,21 +123,21 @@ end
         SDS.males.BCC_exposure(maleRange) = 1;
         SDS.females.BCC_exposure(femaleRange) = 1;
         % ******* BCC Current Relations Factor ********
-           %Using Discrete Value for 2 communities
-           %LUCIO -- in changing to SDS.events I had to change this, though
-           %I don't know what it does 2012/09/19
-         SDS.males.current_relations_factor(maleRange) = SDS.events.formation_BCC.current_relations_factor;
-           SDS.females.current_relations_factor(femaleRange) = SDS.events.formation_BCC.current_relations_factor;          
-        
-           %Using Beta Distribution for 2 communities
-           %{
-           betaPars.alpha = [100, 100];
-           betaPars.beta = [1, 1];
-           current_relations_factorMale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityMale, SDS);
-           current_relations_factorFemale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityFemale, SDS);
-           SDS.males.current_relations_factor(maleRange) = current_relations_factorMale;
-           SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;       
-           %}
+        %Using Discrete Value for 2 communities
+        %LUCIO -- in changing to SDS.events I had to change this, though
+        %I don't know what it does 2012/09/19
+        SDS.males.current_relations_factor(:) = SDS.events.formation.current_relations_factor;
+        SDS.females.current_relations_factor(:) = SDS.events.formation.current_relations_factor;          
+
+        %Using Beta Distribution for 2 communities
+        %{
+        betaPars.alpha = [100, 100];
+        betaPars.beta = [1, 1];
+        current_relations_factorMale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityMale, SDS);
+        current_relations_factorFemale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityFemale, SDS);
+        SDS.males.current_relations_factor(maleRange) = current_relations_factorMale;
+        SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;       
+        %}
            
         % ******* Partnering TEMP!!! *******
         betaPars = [0.5, 0.7];
@@ -146,9 +146,9 @@ end
         %SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
         
         [partMales, pathFemales] = ndgrid(SDS.males.partnering, SDS.females.partnering);
-        formationBCCfield = str2field(eventFormationBCC('name'));
-        if isfield(SDS, formationBCCfield)
-            partneringFcn = SDS.(formationBCCfield).partnering_function.SelectedItem;
+        formationfield = str2field(eventFormation('name'));
+        if isfield(SDS, formationfield)
+            partneringFcn = SDS.(formationfield).partnering_function.SelectedItem;
         end
         switch partneringFcn
             case 'min'
@@ -296,274 +296,6 @@ end
             SDS.males.HIV_positive, SDS.females.HIV_positive
             ]';
         P0.eligible = [malesFalse, femalesFalse];
-        P0.introduce = false;
-        P0.optionB = false;
-        P0.thisPregnantTime = nan(1, SDS.number_of_females);
-        P0.thisChild = nan(1, SDS.number_of_females);
-        % 'baseline' 'mean age factor' 'age difference factor' 'relation
-        % type' 'relations count' 'serodiscordant' 'HIV disclosure'
-   
-        % ******* Event Functions *******
-        P0.numberOfEvents = 0;
-           msg = '';
-        
-        %spTools('resetRand')	% reset random number generator
-        
-        % ******* Function Handles *******
-        %empiricalExposure = spTools('handle', 'empiricalExposure');
-        %empiricalCommunity = spTools('handle', 'empiricalCommunity');
-        empiricalCRF = spTools('handle', 'empiricalCRF');
-        
-        %NIU populationCount = SDS.number_of_males + SDS.number_of_females;
-        malesInt = zeros(1, SDS.number_of_males, SDS.integer);
-        femalesInt = zeros(1, SDS.number_of_females, SDS.integer);
-        malesZeros = zeros(1, SDS.number_of_males, SDS.float);
-        femalesZeros = zeros(1, SDS.number_of_females, SDS.float);
-        malesOnes = ones(1, SDS.number_of_males, SDS.float);
-        femalesOnes = ones(1, SDS.number_of_females, SDS.float);
-        %NIU femalesZeros = zeros(1, SDS.number_of_females, SDS.float);
-        malesNaN = nan(1, SDS.number_of_males, SDS.float);
-        femalesNaN = nan(1, SDS.number_of_females, SDS.float);
-        malesFalse = false(1, SDS.number_of_males);     % boolean/uint8 = 8 bit
-        %malesFalse = zeros(1, SDS.number_of_males, 'uint8');
-        femalesFalse = false(1, SDS.number_of_females);
-        falseMatrix = false(SDS.number_of_males, SDS.number_of_females);
-        
-        P0.now = 0;
-        
-        
-        % ******* Influence Subset *******
-        P0.true = true(SDS.number_of_males, SDS.number_of_females);
-        %maleRange = ones(1, SDS.integer) : SDS.number_of_males;
-        %femaleRange = ones(1, SDS.integer) : SDS.number_of_females;
-        %P0.subset = true(SDS.number_of_males, SDS.number_of_females);
-        maleRange = 1 : SDS.initial_number_of_males;
-        femaleRange = 1 : SDS.initial_number_of_females;
-        P0.subset = falseMatrix;
-
-        P0.aliveMales = malesFalse;
-        P0.aliveMales(maleRange) = true;
-        P0.aliveFemales = femalesFalse;
-        P0.aliveFemales(femaleRange) = true;
-        P0.pregnant = femalesFalse;
-        
-       %P0.ANCtest = false; % false for general type testing, true for test at ANC
-        
-        % ******* Population *******
-        SDS.males.father = malesInt;
-        SDS.females.father = femalesInt;
-        SDS.males.mother = SDS.males.father;
-        SDS.females.mother = SDS.females.father;
-        SDS.males.born = malesNaN;
-        SDS.females.born = femalesNaN;
-        SDS.males.deceased = malesNaN;
-        SDS.females.deceased = femalesNaN;
-        SDS.males.community = malesInt;
-        SDS.females.community = femalesInt;
-        SDS.males.partnering = malesOnes;
-        SDS.females.partnering = femalesOnes;
-        SDS.males.BCC_exposure = malesNaN;
-        SDS.females.BCC_exposure = femalesNaN;
-        SDS.males.current_relations_factor = malesNaN;
-        SDS.females.current_relations_factor = femalesNaN;
-
-        
-                
-        % ******* Communities TEMP!!! *******
-        
-        communityMale = empiricalCommunity(SDS.initial_number_of_males, SDS.number_of_community_members);
-        communityFemale = empiricalCommunity(SDS.initial_number_of_females, SDS.number_of_community_members);
-        SDS.males.community(maleRange) = cast(communityMale, SDS.integer);
-        SDS.females.community(femaleRange) = cast(communityFemale, SDS.integer);
-        
-        
-        
-        
-        
-        % ******* BCC Exposure TEMP!!! *******
-        %{
-        llimit =[0.99, 0.99];
-        ulimit = [1, 1];
-        peak = [1, 1];  % community 1 low exposure, community 2 high exposure;
-        BCCexposureMale = empiricalExposure(SDS.initial_number_of_males, llimit, ulimit, peak, communityMale);
-        BCCexposureFemale = empiricalExposure(SDS.initial_number_of_females, llimit, ulimit, peak, communityFemale);
-        SDS.males.BCC_exposure(maleRange) = BCCexposureMale;
-        SDS.females.BCC_exposure(femaleRange) = BCCexposureFemale;
-        %}
-        SDS.males.BCC_exposure(maleRange) = 1;
-        SDS.females.BCC_exposure(femaleRange) = 1;
-        % ******* BCC Current Relations Factor ********
-           %Using Discrete Value for 2 communities
-         SDS.males.current_relations_factor(maleRange) = SDS.events.formation.current_relations_factor;
-           SDS.females.current_relations_factor(femaleRange) = SDS.events.formation.current_relations_factor;          
-        
-           %Using Beta Distribution for 2 communities
-           %{
-           betaPars.alpha = [100, 100];
-           betaPars.beta = [1, 1];
-           current_relations_factorMale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityMale, SDS);
-           current_relations_factorFemale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityFemale, SDS);
-           SDS.males.current_relations_factor(maleRange) = current_relations_factorMale;
-           SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;       
-           %}
-           
-        % ******* Partnering TEMP!!! *******
-        betaPars = [0.5, 0.7];
-        partneringFcn = 'mean';
-%         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-%         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-%         
-        partMales = repmat(SDS.males.partnering, SDS.number_of_females,1);
-        partFemales = repmat(SDS.females.partnering',1, SDS.number_of_males);
-        formationBCCfield = str2field(eventFormation('name'));
-        if isfield(SDS, formationBCCfield)
-            partneringFcn = SDS.(formationBCCfield).partnering_function.SelectedItem;
-        end
-        switch partneringFcn
-            case 'min'
-                P0.partnering = min(partMales, partFemales);
-            case 'max'
-                P0.partnering = max(partMales, partFemales);
-            case 'mean'
-                P0.partnering = (partMales + partFemales)/2;
-            case 'product'
-                P0.partnering = partMales.*partFemales;
-        end
-        
-        
-        % ******* Aging TEMP!!! *******
-        agesMale = empiricalage(SDS.initial_number_of_males);
-        SDS.males.born(maleRange) = cast(-agesMale, SDS.float);    % -years old
-        agesFemale = empiricalage(SDS.initial_number_of_females);
-        SDS.females.born(femaleRange) = cast(-agesFemale, SDS.float);% -years old
-        
-        
-        % ******* HIV Properties *******
-        SDS.males.HIV_source = malesInt;
-        SDS.females.HIV_source = femalesInt;
-        SDS.males.HIV_positive = malesNaN;
-        SDS.females.HIV_positive = femalesNaN;
-        SDS.males.AIDS_death = malesFalse;
-        SDS.females.AIDS_death = femalesFalse;
-        SDS.males.ARV_eligible = malesNaN;
-        SDS.females.ARV_eligible = femalesNaN;
-        SDS.males.ARV_start = malesNaN;
-        SDS.females.ARV_start = femalesNaN;
-        SDS.males.ARV_stop = malesNaN;
-        SDS.females.ARV_stop = femalesNaN;
-        SDS.males.circumcision = malesNaN;
-        SDS.males.condom = malesZeros;
-        SDS.males.ARV = malesFalse;
-        SDS.females.ARV = femalesFalse;
-        %---------------------------------------------------------%
-        SDS.males.HIV_test = malesNaN;
-        SDS.females.HIV_test = femalesNaN;
-        SDS.males.HIV_test_change = malesNaN;
-        SDS.females.HIV_test_change= femalesNaN;
-        % SDS.females.ANC = femalesNaN;
-        SDS.males.CD4Infection = malesNaN;
-        SDS.females.CD4Infection = femalesNaN;
-        SDS.males.CD4ARV = malesNaN;
-        SDS.females.CD4ARV = femalesNaN;
-        SDS.males.CD4Death = malesNaN;
-        SDS.females.CD4Death = femalesNaN;
-        SDS.males.AIDSdeath = malesNaN; %since infection
-        SDS.females.AIDSdeath = femalesNaN;
-        SDS.person_years_aquired = 0;
-        SDS.males.behaviour_factor = malesNaN;
-        SDS.females.behaviour_factor = femalesNaN;
-        
-        SDS.females.sex_worker = rand(1, SDS.number_of_females)<= SDS.sex_worker_proportion;
-        
-        SDS.tests.ID= zeros(SDS.number_of_tests,1, SDS.integer);
-        SDS.tests.time = nan(SDS.number_of_tests,1, SDS.float);
-        
-        SDS.ARV.ID = zeros(SDS.number_of_ARV, 1, SDS.integer);
-        SDS.ARV.CD4 = zeros(SDS.number_of_ARV, 1, SDS.integer);
-        SDS.ARV.time = nan(SDS.number_of_ARV, 2, SDS.float);
-        SDS.ARV.life_year_saved = nan(SDS.number_of_ARV, 1, SDS.float);
-        
-        P0.birth = false;
-        P0.conception = false;
-        %%%%%%%%%%%%%%%%%
-        P0.ANC= false;
-        SDS.tests.typeANC = false(SDS.number_of_tests,1);
-       %---------------------------------------------------------%        
-        
-        
-        SDS.males.AIDSdeath =  spTools('weibull', 11, 2.25, rand(1, SDS.number_of_males));
-        SDS.females.AIDSdeath =  spTools('weibull', 11, 2.25, rand(1, SDS.number_of_females));
-        
-        % ******* Initialise Relations *******
-        SDS.relations.ID = zeros(SDS.number_of_relations, 2, SDS.integer);
-        SDS.relations.type = zeros(SDS.number_of_relations, 2, SDS.integer);
-        SDS.relations.condom_use = zeros(SDS.number_of_relations,1,SDS.integer);
-        SDS.relations.proximity = zeros(SDS.number_of_relations,1,SDS.integer);
-        % single requires relative time (dt) for accuracy,
-        % for base 1/1/00 datenum results in 1.5 hrs resolution
-        SDS.relations.time = [
-            nan(SDS.number_of_relations, 1, SDS.float), ...
-            nan(SDS.number_of_relations, 1, SDS.float), ...
-            zeros(SDS.number_of_relations, 1, SDS.float)
-            ];
-        
-        
-        % ******* Common Parameters for Population of Singles *******
-        P0.maleRelationCount = zeros(SDS.number_of_males, 1, SDS.float);
-        P0.femaleRelationCount = zeros(1, SDS.number_of_females, SDS.float);
-        P0.relationCount = ...
-            repmat(P0.maleRelationCount, 1, SDS.number_of_females) + ...
-            repmat(P0.femaleRelationCount, SDS.number_of_males, 1);
-        %P0.maleRelationCountmat = repmat(P0.maleRelationCount, 1, SDS.number_of_females);
-        %P0.femaleRelationCountmat = repmat(P0.femaleRelationCount, SDS.number_of_males, 1);
-        P0.relationCountDifference = abs(...
-            repmat(P0.maleRelationCount, 1, SDS.number_of_females) - ...
-            repmat(P0.femaleRelationCount, SDS.number_of_males, 1));
-        
-        P0.transactionSex = repmat(SDS.females.sex_worker, SDS.number_of_males, 1);
-        
-        P0.maleAge = -repmat(SDS.males.born(:), 1, SDS.number_of_females);
-        P0.femaleAge = -repmat(SDS.females.born(:)', SDS.number_of_males, 1);
-        P0.maleAge(P0.maleAge<15) = NaN;
-        P0.femaleAge(P0.femaleAge<15) = NaN;
-        P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
-        
-        %%%%%%%%
-        P0.maleCommunity = repmat(SDS.males.community(:), 1, SDS.number_of_females);
-        P0.femaleCommunity = repmat(SDS.females.community(:)', SDS.number_of_males, 1);
-        
-        
-        P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);%
-        P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);%
-
-        P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);%
-        P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);%
-        
-        P0.timeSinceLast = zeros(SDS.number_of_males,SDS.number_of_females);
-        
-        P0.ageDifference = P0.maleAge - P0.femaleAge;
-        
-        %%%%%%%
-        P0.communityDifference = cast(P0.maleCommunity - P0.femaleCommunity, SDS.float);
-        P0.BCCexposureMax = max(P0.maleBCCexposure,P0.femaleBCCexposure);%
-        P0.BCCexposureMin = min(P0.maleBCCexposure,P0.femaleBCCexposure);%
-        P0.BCCexposureMean = (P0.maleBCCexposure+P0.femaleBCCexposure)./2;%
-        
-        P0.current_relations_factorMax = max(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
-        P0.current_relations_factorMin = min(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
-        P0.current_relations_factorMean = (P0.malecurrent_relations_factor+P0.femalecurrent_relations_factor)./2;%        
-        
-        P0.current = falseMatrix;
-        
-        maleHIVpos = falseMatrix;
-        maleHIVpos(~isnan(SDS.males.HIV_positive), :) = true;
-        femaleHIVpos = falseMatrix;
-        femaleHIVpos(:, ~isnan(SDS.females.HIV_positive)) = true;
-        P0.serodiscordant = xor(maleHIVpos, femaleHIVpos);
-        P0.HIVpos = [
-            SDS.males.HIV_positive, SDS.females.HIV_positive
-            ]';
-        P0.ARV = [malesFalse,femalesFalse];
         P0.introduce = false;
         P0.optionB = false;
         P0.thisPregnantTime = nan(1, SDS.number_of_females);
