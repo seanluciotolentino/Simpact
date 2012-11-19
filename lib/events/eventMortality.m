@@ -230,6 +230,58 @@ end
         end
         
         P.abolishTransmission(P0);
+        %lucio's unsophisticated attempt at replacement -- when an
+        %individual dies, replace him/her with a geometerically
+        %distributed number of individuals.  This only happens when
+        %'replace' is set as a field of the mortality event.
+        if isfield(P,'replace') 
+            x =rand(1,10) < P.replace*ones(1,10);
+            replacements = min([10 find(1-x,1,'first')-1]);
+            for i=1:replacements
+                [SDS,P0] = lucio_replace(SDS,P0);
+            end
+        end        
+    end
+
+    function [SDS,P0] = lucio_replace(SDS,P0) 
+        P0.subset = P.false;        % required by eventFormation_eventTimes
+        P0.birth = true;
+                      
+        if rand < 0.5
+            % baby boy born
+            sex = 'males';
+        else
+            % baby girl born
+            sex = 'females';
+        end
+        
+        ID = find(isnan(SDS.(sex).born), 1);
+        if isempty(ID)
+            % population overflow!
+            return
+        end
+                
+        SDS.(sex).father(ID) = 0;
+        SDS.(sex).mother(ID) = 0;
+        SDS.(sex).born(ID) = P0.now;
+
+        SDS.(sex).current_relations_factor(ID) = SDS.events.formation.current_relations_factor;
+        switch sex
+            case 'males'
+                P0.aliveMales(ID) = true;
+                P0.maleAge(ID,:) = zeros(1,SDS.number_of_males);
+                P0.timeSinceLast(ID,:) = zeros(1,SDS.number_of_males);
+                P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);
+                Pmort.index = ID;
+            case 'females'
+                P0.aliveFemales(ID) = true;
+                P0.femaleAge(:,ID) = zeros(SDS.number_of_females,1);
+                P0.timeSinceLast(:,ID) = zeros(SDS.number_of_females,1);
+                P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);
+                Pmort.index = SDS.number_of_males + ID;
+        end
+        eventMortality_enable(Pmort)            % uses P0.index
+                       
         
     end
 
