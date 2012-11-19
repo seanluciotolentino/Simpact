@@ -356,6 +356,7 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     %default hazard function 
     
     % ******* Subsets *******
+    P0.subset = P0.true;
     P0.subset(~P0.aliveMales, :) = false;
     P0.subset(:, ~P0.aliveFemales) = false;
     P.subset = repmat(P0.subset, [1 1 3]);  % 3D logical index matrix
