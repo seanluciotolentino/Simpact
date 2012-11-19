@@ -150,7 +150,7 @@ for mm=1:samplesize
         start = SDS.relations.time(r,SDS.index.start);
         for rr = hisrelationships'
             if start>SDS.relations.time(rr,SDS.index.start) && start<SDS.relations.time(rr,SDS.index.stop);
-               concurrent(m) = true;
+               concurrent(mm) = true;
                break 
             end
         end
