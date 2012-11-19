@@ -367,8 +367,7 @@ end
 
 
 %% nextEvent
-    function [SDS, t] = modelHIV_nextEvent(SDS)
-        
+    function [SDS, t] = modelHIV_nextEvent(SDS)        
         % ******* 1: Fetch Event Times *******
         for ii = 1 : P0.numberOfEvents
             %P0.event(ii).time = P0.event(ii).eventTime(SDS);  % earliest per event
@@ -400,7 +399,10 @@ end
         P0.now = P0.now + P0.eventTime;
         P0.maleAge = P0.maleAge + P0.eventTime;
         P0.femaleAge = P0.femaleAge + P0.eventTime;
-        P0.meanAge = P0.meanAge + P0.eventTime;
+        %P0.meanAge = P0.meanAge + P0.eventTime;
+        P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
+        P0.ageDifference = P0.maleAge - P0.femaleAge;
+        
         P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
         % P0.riskyBehaviour =  P0.meanAge + P0.ageDifference + P0.relationCount + P0.relationsTerm + P0.serodiscordant;        
         %{
@@ -411,11 +413,10 @@ end
         P0.serodiscordantSex
         P0.disclosureSex 
             %}
-        
+       
         P0.subset = P0.true;
         P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:, ~P0.aliveFemales) = false;
-        
+        P0.subset(:, ~P0.aliveFemales) = false;   
         
         % ******* 4: Advance All Events *******
         for ii = 1 : P0.numberOfEvents
