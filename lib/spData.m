@@ -71,11 +71,11 @@ function [ss,matout] = spData_SummaryStatistics(SDS,flag)
 %vector (matout). Additionally, flag input allows user to display 
 %vector to screen for easier export.
 
-yearsimulated = ceil(spTools('dateTOsimtime',SDS.end_date,SDS.start_date));
+yearssimulated = ceil(spTools('dateTOsimtime',SDS.end_date,SDS.start_date));
 samplesize = 40; %WHY ? 
 bornmin = 10;%-10; %include only the individuals that came of age within in the simulation
-SDS.relations.time(SDS.relations.time(:,SDS.index.stop)==Inf,SDS.index.stop) = ...
-    yearsimulated*ones(size( SDS.relations.time(SDS.relations.time(:,SDS.index.stop)==Inf,SDS.index.stop) ));
+SDS.relations.time(SDS.relations.time(:,SDS.index.stop)==Inf,SDS.index.stop) = yearssimulated;
+    
 
 
 %% get a sample of men
@@ -104,7 +104,7 @@ end
 
 %% summary statistics (SS)
 %age of partner (1) 
-ages = sort(yearsimulated - SDS.females.born(women));
+ages = sort(yearssimulated - SDS.females.born(women));
 ss.age_of_partner.median = median(ages) ;
 ss.age_of_partner.uq = ages(ceil(.75*length(ages)));
 ss.age_of_partner.lq = ages(ceil(.25*length(ages)));
@@ -118,9 +118,9 @@ ss.age_breakdown.level4 = sum(ages>45)/length(ages);
 %age difference
 agedifferences = [];
 for m=men
-    man = yearsimulated - SDS.males.born(m);
+    man = yearssimulated - SDS.males.born(m);
     hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==m); %the relationships of this male
-    women = yearsimulated - SDS.females.born(unique(SDS.relations.ID(hisrelationships,SDS.index.female)));
+    women = yearssimulated - SDS.females.born(unique(SDS.relations.ID(hisrelationships,SDS.index.female)));
     agedifferences = sort([agedifferences abs(man-women)]);
 end
 ss.age_difference.median = median(agedifferences);
