@@ -71,7 +71,7 @@ function [ss,matout] = spData_SummaryStatistics(SDS,flag)
 %vector (matout). Additionally, flag input allows user to display 
 %vector to screen for easier export.
 
-yearssimulated = ceil(spTools('dateTOsimtime',SDS.end_date,SDS.start_date));
+yearssimulated = spTools('dateTOsimtime',SDS.end_date,SDS.start_date);
 samplesize = 40; %WHY ? 
 bornmin = 10;%-10; %include only the individuals that came of age within in the simulation
 SDS.relations.time(SDS.relations.time(:,SDS.index.stop)==Inf,SDS.index.stop) = yearssimulated;
@@ -81,11 +81,14 @@ SDS.relations.time(SDS.relations.time(:,SDS.index.stop)==Inf,SDS.index.stop) = y
 %% get a sample of men
 clear sample
 males = 1:SDS.number_of_males; 
-sample(randperm(length(males(SDS.males.born>bornmin)))) = males(SDS.males.born>bornmin) ; %possible males randomly mixed
+%males greater than bornmin and at least 15
+sample(randperm(length(males(SDS.males.born>bornmin & (yearssimulated - SDS.males.born) > 15) ) ) ) = ...
+    males(SDS.males.born>bornmin & (yearssimulated - SDS.males.born) > 15) ; %possible males randomly mixed
 if samplesize>length(sample)
-    ss.ERROR='NOT ENOUGH IN THE SAMPLE';
-    matout = zeros(26,1);
-    return
+    %     ss.ERROR='NOT ENOUGH IN THE SAMPLE';
+    %     matout = zeros(26,1);
+    %     return
+    samplesize = length(sample); %don't have enough? just use what you got
 end
 men = sample(1:samplesize); %this will throw an error if not enough males found
 
@@ -135,9 +138,10 @@ ss.age_disparate.intergenerational = sum(agedifferences>=10)/length(agedifferenc
 %total lifetime partners
 num_partners = zeros(1,samplesize);
 for m=1:samplesize
-    num_partners(m) = sum(SDS.relations.ID(:,SDS.index.male)==men(m));
+    %num_partners(m) = sum(SDS.relations.ID(:,SDS.index.male)==men(m));%whoops, got to make sure they're unique!
+    num_partners(m) = length(unique(SDS.relations.ID(SDS.relations.ID(:,SDS.index.male)==men(m),SDS.index.female)));
 end
-ss.total_lifetime_partners.level1 = sum(num_partners<=1);
+ss.total_lifetime_partners.level1 = sum(num_partners==1); 
 ss.total_lifetime_partners.level2 = sum(num_partners>1 & num_partners<=5);
 ss.total_lifetime_partners.level3 = sum(num_partners>5 & num_partners<=14);
 ss.total_lifetime_partners.level4 = sum(num_partners>14);
@@ -168,15 +172,16 @@ ss.duration_of_relationships.median = median(durations);
 ss.duration_of_relationships.lq = durations(floor(.25*length(durations)));
 ss.duration_of_relationships.uq = durations(ceil(.75*length(durations)));
 
-ss.duration_of_relationships.level1 = (sum(durations<1)/length(durations))*100;
-ss.duration_of_relationships.level2 = (sum(durations>=1 & durations<=39)) /length(durations)*100;
-ss.duration_of_relationships.level3 = (sum(durations>40)) /length(durations)*100;
+ss.duration_of_relationships.level1 = (sum(durations<2)/length(durations))*100;
+ss.duration_of_relationships.level2 = (sum(durations>=2 & durations<=39)) /length(durations)*100;
+ss.duration_of_relationships.level3 = (sum(durations>39)) /length(durations)*100;
 
 %set parameters for later
 ss.samplesize = samplesize;
 ss.men = men;
 
 %% Generate vector version:
+not_missing = sum( num_partners>0 ) ;
 matout = [ss.age_of_partner.median
 ss.age_of_partner.lq
 ss.age_of_partner.uq
@@ -194,10 +199,10 @@ ss.age_disparate.non_disparate*100
 ss.age_disparate.age_disparate*100
 ss.age_disparate.intergenerational*100
 
-((ss.total_lifetime_partners.level1)/ss.samplesize)*100
-((ss.total_lifetime_partners.level2)/ss.samplesize)*100
-((ss.total_lifetime_partners.level3)/ss.samplesize)*100
-((ss.total_lifetime_partners.level4)/ss.samplesize)*100
+((ss.total_lifetime_partners.level1)/not_missing)*100
+((ss.total_lifetime_partners.level2)/not_missing)*100
+((ss.total_lifetime_partners.level3)/not_missing)*100
+((ss.total_lifetime_partners.level4)/not_missing)*100
 
 (ss.concurrent_relationships/ss.samplesize)*100
 (1 - (ss.concurrent_relationships/ss.samplesize))*100
@@ -230,15 +235,15 @@ if exist('flag') && flag
 	fprintf('\n%f',ss.age_disparate.age_disparate*100)
 	fprintf('\n%f\n\n',ss.age_disparate.intergenerational*100)
 
-	fprintf('\n%f',((ss.total_lifetime_partners.level1)/ss.samplesize)*100)
-	fprintf('\n%f',((ss.total_lifetime_partners.level2)/ss.samplesize)*100)
-	fprintf('\n%f',((ss.total_lifetime_partners.level3)/ss.samplesize)*100)
-	fprintf('\n%f\n',((ss.total_lifetime_partners.level4)/ss.samplesize)*100)
+	fprintf('\n%f',((ss.total_lifetime_partners.level1)/not_missing)*100)
+	fprintf('\n%f',((ss.total_lifetime_partners.level2)/not_missing)*100)
+	fprintf('\n%f',((ss.total_lifetime_partners.level3)/not_missing)*100)
+	fprintf('\n%f\n',((ss.total_lifetime_partners.level4)/not_missing)*100)
 
 	fprintf('\n%f',(ss.concurrent_relationships/ss.samplesize)*100)
 	fprintf('\n%f\n',(1 - (ss.concurrent_relationships/ss.samplesize))*100)
 
-	fprintf('\n%f',ss.duration_of_relationships.mean)
+	%fprintf('\n%f',ss.duration_of_relationships.mean)
 	fprintf('\n%f',ss.duration_of_relationships.median)
 	fprintf('\n%f',ss.duration_of_relationships.lq )
 	fprintf('\n%f',ss.duration_of_relationships.uq )
