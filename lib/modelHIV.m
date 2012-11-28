@@ -140,10 +140,10 @@ end
         %}
            
         % ******* Partnering TEMP!!! *******
-        betaPars = [0.5, 0.7];
+        betaPars = [0.5, 0.5];
         partneringFcn = 'mean';
-        %SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-        %SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
         
         [partMales, pathFemales] = ndgrid(SDS.males.partnering, SDS.females.partnering);
         formationfield = str2field(eventFormation('name'));
