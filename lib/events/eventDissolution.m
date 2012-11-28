@@ -197,7 +197,7 @@ end
             return
         end
         
-        subset = P0.subset & P0.current;
+        subset = P0.subset & P0.current; %I'm curious why this is different -Lucio 11/27
         P.rand(P0.index) = P.rand0toInf(1, 1);
         
         
@@ -206,7 +206,9 @@ end
             P.current_relations_factor*P0.relationCount(subset) + ...
             P.mean_age_factor*(P0.meanAge(subset) - P.age_limit) + ...
             P.last_change_factor*P0.timeSinceLast(subset) + ...
-            P.age_difference_factor*abs(P0.ageDifference(subset) - P.preferred_age_difference) +...
+            P.age_difference_factor*(abs(P0.ageDifference(subset) ...
+                - (P.preferred_age_difference*P0.meanAge(subset)*P.mean_age_growth)...
+                )./ (P.preferred_age_difference*P0.meanAge(subset)*P.mean_age_dispersion) ) + ...
             P.transaction_sex_factor*P0.transactionSex(subset) + ...
             P.community_factor*(P0.communityDifference(subset)==0);
         %             P.long_term_factor*(P0.relationsTerm(subset)==1) +...
@@ -270,7 +272,9 @@ props.individual_behavioural_factor = 0;
 props.mean_age_factor = -log(5)/40; %-log(hazard ration)/(age2-age1);
 props.last_change_factor = log(0.7);
 props.age_limit = 15;
-props.age_difference_factor = log(1.1);
+props.age_difference_factor = 4.5;
+props.mean_age_growth = 0.1; %how preferred age difference grows with mean age
+props.mean_age_dispersion = 0.001; %how preferred age is dispersed with mean age (see documentation)
 props.transaction_sex_factor = 1;
 props.preferred_age_difference = 3;
 % props.relations_type_factor = {

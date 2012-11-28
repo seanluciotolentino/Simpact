@@ -356,6 +356,7 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     %default hazard function 
     
     % ******* Subsets *******
+    P0.subset = P0.true;
     P0.subset(~P0.aliveMales, :) = false;
     P0.subset(:, ~P0.aliveFemales) = false;
     P.subset = repmat(P0.subset, [1 1 3]);  % 3D logical index matrix
@@ -371,18 +372,40 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     P.time0 = max(boy, girl);
 
     t0 = P.time0(P0.subset);    
+    
+    alpha = P.baseline_factor*P0.partnering(P0.subset) + ...
+        P.current_relations_factor*P0.relationCount(P0.subset) + ...
+        P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
+        P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ... 
+        P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
+        P.age_difference_factor*(abs(P0.ageDifference(P0.subset) ...
+            - (P.preferred_age_difference*P0.meanAge(P0.subset)*P.mean_age_growth)...
+                )./ (P.preferred_age_difference*P0.meanAge(P0.subset)*P.mean_age_dispersion) ) + ...
+        P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
+        P.community_difference_factor*abs(P0.communityDifference(P0.subset));
+    % age difference factor used to be:
+    %P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
+    %    P.preferred_age_difference)/5)-1) + ...
+    
+    Pt = P.rand(P0.subset);
+
+    t = P.expLinear(alpha, P.beta, t0, Pt); %Returns time till event given cum. haz + t0 for P0.subset
+    
+    eventTimes = P.eventTimes;
+    eventTimes(P0.subset) = t; %grab the event times for the subset we want
+    
 
     %P0.current_relations_factorMean(P0.subset)
     % ******* Hazard Parameters *******
-    P.alpha(P.subset) = repmat(P.baseline_factor*P0.partnering(P0.subset) + ...
-        P0.current_relations_factorMin(P0.subset).*P0.relationCount(P0.subset) + ...
-        P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
-        P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ...
-        P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
-        P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
-        P.preferred_age_difference)/5)-1) + ...
-        P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
-        P.community_difference_factor*abs(P0.communityDifference(P0.subset)), [1 1 3]);  % 3D matrix
+    %     P.alpha(P.subset) = repmat(P.baseline_factor*P0.partnering(P0.subset) + ...
+    %         P0.current_relations_factorMin(P0.subset).*P0.relationCount(P0.subset) + ...
+    %         P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
+    %         P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ... 
+    %         P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
+    %         P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
+    %         P.preferred_age_difference)/5)-1) + ...
+    %         P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
+    %         P.community_difference_factor*abs(P0.communityDifference(P0.subset)), [1 1 3]);  % 3D matrix
 
     % P.individual_behavioural_factor*P0.riskyBehaviour(P0.subset)+...
     % P.alpha(P.subset2) = P.alpha(P.subset2) - ...   alpha 2
@@ -399,15 +422,15 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
 
 
     % ******* Vectors *******
-    alpha1 = P.alpha(P0.subset);        % <== no typo
+    %alpha1 = P.alpha(P0.subset);        % <== no typo
     %alpha2 = P.alpha(P.subset2);
     %alpha3 = P.alpha(P.subset3);
     %beta2 = P.beta2(P0.subset);
-    Pt = P.rand(P0.subset);
+    %Pt = P.rand(P0.subset);
 
     %If BCC hasn't hit yet
     % Phase 1 (before BCC)
-    t = P.expLinear(alpha1, P.beta, t0, Pt); %Returns time till event given cum. haz + t0 for P0.subset
+    %t = P.expLinear(alpha1, P.beta, t0, Pt); %Returns time till event given cum. haz + t0 for P0.subset
             
     %     idx2 = t > t1;              
     %     % event times during phase 2 or 3
@@ -424,8 +447,8 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     %         end
     %     end
     
-    eventTimes = P.eventTimes;
-    eventTimes(P0.subset) = t; %grab the event times for the subset we want
+    %eventTimes = P.eventTimes;
+    %eventTimes(P0.subset) = t; %grab the event times for the subset we want
 end
 
 end
@@ -455,6 +478,8 @@ props.last_change_factor = log(1.005);         % NOTE: intHazard = Inf for d = -
 props.age_limit = 15;                 % no couple formation below this age
 props.age_difference_factor =-log(5)/40;
 props.preferred_age_difference = 4.5;
+props.mean_age_growth = 0.1; %how preferred age difference grows with mean age
+props.mean_age_dispersion = 0.001; %how preferred age is dispersed with mean age (see documentation)
 props.community_difference_factor = 0;
 props.transaction_sex_factor = log(2);
 props.communities = {
