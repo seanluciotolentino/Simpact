@@ -126,7 +126,6 @@ for m=men
     women = yearssimulated - SDS.females.born(unique(SDS.relations.ID(hisrelationships,SDS.index.female)));
     agedifferences = sort([agedifferences abs(man-women)]);
 end
-ss.age_difference.agedifferences = agedifferences;
 ss.age_difference.median = median(agedifferences);
 ss.age_difference.lq = agedifferences(ceil(.25*length(agedifferences)));
 ss.age_difference.uq = agedifferences(ceil(.75*length(agedifferences)));
@@ -142,7 +141,6 @@ for m=1:samplesize
     %num_partners(m) = sum(SDS.relations.ID(:,SDS.index.male)==men(m));%whoops, got to make sure they're unique!
     num_partners(m) = length(unique(SDS.relations.ID(SDS.relations.ID(:,SDS.index.male)==men(m),SDS.index.female)));
 end
-ss.total_lifetime_partners.num_partners = num_partners;
 ss.total_lifetime_partners.level1 = sum(num_partners==1); 
 ss.total_lifetime_partners.level2 = sum(num_partners>1 & num_partners<=5);
 ss.total_lifetime_partners.level3 = sum(num_partners>5 & num_partners<=14);
@@ -177,23 +175,6 @@ ss.duration_of_relationships.uq = durations(ceil(.75*length(durations)));
 ss.duration_of_relationships.level1 = (sum(durations<2)/length(durations))*100;
 ss.duration_of_relationships.level2 = (sum(durations>=2 & durations<=39)) /length(durations)*100;
 ss.duration_of_relationships.level3 = (sum(durations>39)) /length(durations)*100;
-
-%partner turnover --not used in VLIR comparison
-partner_turnover = zeros(1,samplesize);
-for mm=1:samplesize
-    hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==men(mm)); %the relationships of this male
-    his_turnover = 0;
-    for rr=1:length(hisrelationships)-1
-        this_relationship = hisrelationships(rr);
-        next_relationships = hisrelationships(rr+1);
-        thisEnd = SDS.relations.time(this_relationship,SDS.index.stop);
-        nextStart = SDS.relations.time(next_relationships,SDS.index.start);
-        
-        his_turnover = his_turnover + max(0,(nextStart - thisEnd));
-    end
-    partner_turnover(mm) = his_turnover / (length(hisrelationships) - 1);
-end
-ss.partner_turnover = partner_turnover;
 
 %set parameters for later
 ss.samplesize = samplesize;

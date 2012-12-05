@@ -41,7 +41,7 @@ end
             handles.msg('\nStarting simulation at %s\n', datestr(now))
             SDS = handles.data();
         else
-            %fprintf(1, 'Console run progress: <init>')
+            fprintf(1, 'Console run progress: <init>')
             handles = struct('msg', @spRun_start_msg, ...
                 'fail', @spRun_start_fail, ...
                 'progress', @spRun_start_progress, ...
@@ -108,10 +108,10 @@ end
             pause(eps)  % required for GUI events, i.e., stop button
             progress = t/dateRange;
             if progress >= 1 || P.stop
-                %handles.progress(min(1, progress), handles)
+                handles.progress(min(1, progress), handles)
                 break
             end
-            %handles.progress(progress, handles)
+            handles.progress(progress, handles)
         end
         
         elapsedTime = timestr(toc);
