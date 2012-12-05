@@ -140,7 +140,7 @@ end
         %}
            
         % ******* Partnering TEMP!!! *******
-        betaPars = [0.5, 0.5];
+        betaPars = SDS.betaPars;
         partneringFcn = 'mean';
         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
@@ -484,6 +484,7 @@ SDS.sex_worker_proportion = 0.04;
 SDS.number_of_relations = SDS.number_of_males*SDS.number_of_females;
 SDS.number_of_tests =  (SDS.number_of_males+SDS.number_of_females);
 SDS.number_of_ARV = (SDS.number_of_males+SDS.number_of_females);
+SDS.betaPars = [0.5 0.5];
 
 %SDS.float = 'single';           % e.g. 3.14 (32 bit floating point)
 SDS.float = 'double';           % e.g. 3.14 (64 bit floating point)
