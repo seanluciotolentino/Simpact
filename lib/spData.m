@@ -239,7 +239,7 @@ ss.duration_of_relationships.level1
 ss.duration_of_relationships.level2
 ss.duration_of_relationships.level3];
 
-%% print to screen
+%% print to screen -- just for Lucio's chi squared tests
 if exist('flag') && flag
 	fprintf('\n%f',ss.age_of_partner.median)
 	fprintf('\n%f',ss.age_of_partner.lq)
