@@ -65,6 +65,11 @@ function LYS = spData_LifeYearsSaved(SDS1,SDS2)
     LYS = LYL1 - LYL2 ; 
 end
 
+function [persons, person_years] = spData_PersonYearCalc(SDS,criteria)
+    
+
+end
+
 function [ss,matout] = spData_SummaryStatistics(SDS,flag)
 %function to produce summary statistics (ss) given an SDS
 %outputs summary statistics structure (ss), and 
@@ -79,7 +84,7 @@ else
 	bornmin = -15; %include only the individuals that came of age within in the simulation
 end
 SDS.relations.time(SDS.relations.time(:,SDS.index.stop)==Inf,SDS.index.stop) = yearssimulated;
-    
+SDS.males.deceased(isnan(SDS.males.deceased)) = yearssimulated; %change deceased time to the end of the simulation for purposes of calculating partner turnover rate
 
 
 %% get a sample of men
@@ -183,22 +188,36 @@ ss.duration_of_relationships.level2 = (sum(durations>=2 & durations<=39)) /lengt
 ss.duration_of_relationships.level3 = (sum(durations>39)) /length(durations)*100;
 
 %partner turnover --not used in VLIR comparison
-partner_turnover = zeros(1,samplesize);
-for mm=1:samplesize
-    hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==men(mm)); %the relationships of this male
-    if length(hisrelationships)<=1; continue; end
-    his_turnover = 0;
-    for rr=1:length(hisrelationships)-1
-        this_relationship = hisrelationships(rr);
-        next_relationships = hisrelationships(rr+1);
-        thisEnd = SDS.relations.time(this_relationship,SDS.index.stop);
-        nextStart = SDS.relations.time(next_relationships,SDS.index.start);
-        
-        his_turnover = his_turnover + max(0,(nextStart - thisEnd));
-    end
-    partner_turnover(mm) = his_turnover / (length(hisrelationships) - 1);
+%first, calculate person years of men:
+tom = max(0,SDS.males.born(men)+15); %time of maturity
+PY = sum(max(0,SDS.males.deceased(men)-tom)); %time man in mature before death
+
+%second, calculate each mans number of relationships 
+num_rela = 0; %of these men
+for mm = 1:samplesize
+    num_rela = num_rela + sum(SDS.relations.ID(:,SDS.index.male)==men(mm)); %the relationships of this male
 end
-ss.partner_turnover = partner_turnover;
+
+%third divide number of relations by person years to get partners per year
+ss.partner_turnover = num_rela / PY;
+
+%old calculation
+% partner_turnover = zeros(1,samplesize);
+% for mm=1:samplesize
+%     hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==men(mm)); %the relationships of this male
+%     if length(hisrelationships)<=1; continue; end
+%     his_turnover = 0;
+%     for rr=1:length(hisrelationships)-1
+%         this_relationship = hisrelationships(rr);
+%         next_relationships = hisrelationships(rr+1);
+%         thisEnd = SDS.relations.time(this_relationship,SDS.index.stop);
+%         nextStart = SDS.relations.time(next_relationships,SDS.index.start);
+%         
+%         his_turnover = his_turnover + max(0,(nextStart - thisEnd));
+%     end
+%     partner_turnover(mm) = his_turnover / (length(hisrelationships) - 1);
+% end
+% ss.partner_turnover = partner_turnover;
 
 %set parameters for later
 ss.samplesize = samplesize;
