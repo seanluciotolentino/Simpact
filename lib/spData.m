@@ -186,6 +186,7 @@ ss.duration_of_relationships.level3 = (sum(durations>39)) /length(durations)*100
 partner_turnover = zeros(1,samplesize);
 for mm=1:samplesize
     hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==men(mm)); %the relationships of this male
+    if length(hisrelationships)<=1; continue; end
     his_turnover = 0;
     for rr=1:length(hisrelationships)-1
         this_relationship = hisrelationships(rr);
