@@ -38,6 +38,7 @@ end
         [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
         [P.updateMTCT, msg] = spTools('handle', 'eventMTCT', 'update');
         [P.enableTest, msg] = spTools('handle', 'eventTest', 'enable');
+        [P.fireTest, msg] = spTools('handle', 'eventTest', 'fire');
         [P.setupMTCT,msg] = spTools('handle','eventMTCT','setup');
         [P.enableAIDSmortality, msg] = spTools('handle', 'eventAIDSmortality', 'enable');
 
@@ -45,7 +46,7 @@ end
     end
 
 %% get
-    function X = eventARVstop_get()
+    function X = eventARVstop_get(t)
 	X = P;
     end
 
@@ -54,24 +55,15 @@ end
         
         elements = SDS.number_of_males + SDS.number_of_females;
         msg = '';
-	P = X;
-
-	P.lifetime_extension_by_ARV = SDS.ARV_stop.lifetime_extension_by_ARV;
-        P.scale = P.lifetime_extension_by_ARV{2,1};
-        P.shape =P.lifetime_extension_by_ARV{2,2};
-	P.drop_out_rate = SDS.ARV_stop.drop_out_rate;
-	P.enable = SDS.ARV_stop.enable;
-        [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
-        [P.enableTest, msg] = spTools('handle', 'eventTest', 'enable');
-        
-
+        P = X;
         P.weibullEventTime = spTools('handle','weibullEventTime');
-
-        P.randLife = rand(1,elements);
-        P.rand = rand(1,elements, SDS.float);
-        P.eventTimes = inf(1, elements, SDS.float);
-        
+        [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
+        [P.updateMTCT, msg] = spTools('handle', 'eventMTCT', 'update');
+        [P.enableTest, msg] = spTools('handle', 'eventTest', 'enable');
+        [P.fireTest, msg] = spTools('handle', 'eventTest', 'fire');
+        [P.setupMTCT,msg] = spTools('handle','eventMTCT','setup');
         [P.enableAIDSmortality, msg] = spTools('handle', 'eventAIDSmortality', 'enable');
+
     end
 %% eventTimes
     function eventTimes = eventARVstop_eventTimes(~, ~)
@@ -95,6 +87,7 @@ end
         if ~P.enable
             return
         end
+        P0.ARV(P0.index) = false;
         if P0.index<=SDS.number_of_males
             P0.male = P0.index;
             P0.female = NaN;
@@ -115,10 +108,27 @@ end
               P0.male = P0.index;
               timeDeath = SDS.males.AIDSdeath(P0.male);
               timeHIVpos = SDS.males.HIV_positive(P0.male);
+            
               SDS.males.AIDSdeath(P0.male) = spTools('weibullEventTime', (timeDeath+timeHIVpos-P0.now)/P.scale, P.shape, P.rand(P0.index),0) + P0.now-timeHIVpos;
               P.enableAIDSmortality(P0,SDS.males.AIDSdeath(P0.male)) 
               SDS.males.ARV(P0.male) = false;
               SDS.ARV.life_year_saved(ARVs) = SDS.ARV.life_year_saved(ARVs) - timeDeath + SDS.males.AIDSdeath(P0.male);
+               CD4Infection = SDS.males.CD4Infection(P0.male);
+              CD4Death = SDS.males.CD4Death(P0.male);
+              if P0.now<= SDS.males.CD4_500(P0.male)
+                  [SDS.males.CD4_500(P0.male),SDS.males.CD4_350(P0.male),SDS.males.CD4_200(P0.male)]=...
+                  CD4interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
+              else
+                  if P0.now<= SDS.males.CD4_350(P0.male)
+                      [~,SDS.males.CD4_350(P0.male),SDS.males.CD4_200(P0.male)]=...
+                  CD4interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
+                  else
+                      if P0.now<= SDS.males.CD4_200(P0.male)
+                          [~,~,SDS.males.CD4_200(P0.male)]=...
+                  CD4interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
+                      end
+                  end                                                 
+              end
           for relIdx = find(currentIdx & (SDS.relations.ID(:, SDS.index.male) == P0.male) &...
                   ismember(SDS.relations.ID(:, SDS.index.female),find(isnan(SDS.females.HIV_positive))))'              
                 P0.female = SDS.relations.ID(relIdx, SDS.index.female);
@@ -135,6 +145,29 @@ end
               SDS.ARV.life_year_saved(ARVs) = SDS.ARV.life_year_saved(ARVs) - timeDeath + SDS.females.AIDSdeath(P0.female);
               SDS.females.ARV(P0.female) = false;
               P.updateMTCT(SDS, P0);
+              
+              CD4Infection = SDS.females.CD4Infection(P0.female);
+              CD4Death = SDS.females.CD4Death(P0.female);
+              if P0.now<= SDS.females.CD4_500(P0.female)
+                  [SDS.females.CD4_500(P0.female),SDS.females.CD4_350(P0.female),SDS.females.CD4_200(P0.female)]=...
+                  CD4interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
+              else
+                  if P0.now<= SDS.females.CD4_350(P0.female)
+                      [~,SDS.females.CD4_350(P0.female),SDS.females.CD4_200(P0.female)]=...
+                  CD4interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
+                  else
+                      if P0.now<= SDS.females.CD4_200(P0.female)
+                          [~,~,SDS.females.CD4_200(P0.female)]=...
+                  CD4interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
+                      end
+                  end                                                 
+              end
+              
+              
+              if P0.optionB(P0.female)
+                  [SDS, P0] = P.fireTest(SDS,P0);
+                  P0.optionB(P0.female) = false;
+              end
              
                for relIdx = find(currentIdx & (SDS.relations.ID(:, SDS.index.female) == P0.female) &...
                   ismember(SDS.relations.ID(:, SDS.index.male),find(isnan(SDS.males.HIV_positive))))'              
@@ -151,11 +184,15 @@ end
 
 
 %% enable
-    function eventARVstop_enable(P0,t)
+    function eventARVstop_enable(SDS, P0)
         if ~P.enable
             return
         end
-        if P0.optionB&&(t>P0.now)           
+        optionB = false;
+        if P0.index>SDS.number_of_males
+            optionB = P0.optionB(P0.index-SDS.number_of_males);
+        end
+        if optionB
             breastfeedingTime = P.setupMTCT(P0.female);
             P.eventTime(P0.index)  = P0.thisPregnantTime(P0.female) + breastfeedingTime + 41/52 - P0.now;            
         else

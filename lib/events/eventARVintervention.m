@@ -19,7 +19,7 @@ end
 %% init
     function [elements, msg] = eventARVintervention_init(SDS, event)
         
-        elements = 4;
+        elements = 6;
         msg = '';
         
         P = event;                  % copy event parameters
@@ -34,11 +34,17 @@ end
             datenum(SDS.start_date))/daysPerYear;
         P.eventTimes(4) = (datenum(P.ARV_expansion_strategies{5,2}) - ...
             datenum(SDS.start_date))/daysPerYear;
-        P.names ={'population' 'pregnant' 'discordant' 'fsw'};
+         P.eventTimes(5) = (datenum(P.ARV_expansion_strategies{6,2}) - ...
+            datenum(SDS.start_date))/daysPerYear;
+        P.eventTimes(6) = (datenum(P.ARV_expansion_strategies{7,2}) - ...
+            datenum(SDS.start_date))/daysPerYear;
+        P.names ={'population' 'pregnant' 'discordant' 'fsw' 'age50' 'nonbreast'};
         P.threshold =[P.ARV_expansion_strategies{2,3}, P.ARV_expansion_strategies{3,3},...
-            P.ARV_expansion_strategies{4,3},P.ARV_expansion_strategies{5,3}];
+            P.ARV_expansion_strategies{4,3},P.ARV_expansion_strategies{5,3},...
+            P.ARV_expansion_strategies{6,3},P.ARV_expansion_strategies{7,3}];
         P.coverage =[P.ARV_expansion_strategies{2,4}, P.ARV_expansion_strategies{3,4},...
-            P.ARV_expansion_strategies{4,4},P.ARV_expansion_strategies{5,4}];
+            P.ARV_expansion_strategies{4,4},P.ARV_expansion_strategies{5,4},...
+            P.ARV_expansion_strategies{6,4},P.ARV_expansion_strategies{7,4}];
         [P.interveneTest, msg] = spTools('handle', 'eventTest', 'intervene');
         
     end
@@ -51,7 +57,7 @@ end
 %% restore
     function [elements,msg] = eventARVintervention_restore(SDS,X)
         
-        elements = 4;
+        elements = 5;
         msg = '';       
         P = X;
         [P.interveneTest, msg] = spTools('handle', 'eventTest', 'intervene');        
@@ -76,27 +82,15 @@ end
         if ~P.enable
             return
         end
-       switch P0.index
-           case 1
-               P.interveneTest(P.names{1},P.threshold(1), P.coverage(1));
-               P.eventTimes(1) = Inf;
-           case 2
-               P.interveneTest(P.names{2},P.threshold(2), P.coverage(2));
-               P.eventTimes(2) = Inf;
-           case 3
-               P.interveneTest(P.names{3},P.threshold(3), P.coverage(3));
-               P.eventTimes(3) = Inf;
-           case 4
-               P.interveneTest(P.names{4},P.threshold(4), P.coverage(4));
-               P.eventTimes(4) = Inf;
-       end
+               P.interveneTest(P.names{P0.index},P.threshold(P0.index), P.coverage(P0.index));
+               P.eventTimes(P0.index) = Inf;
+
     end
 
 %% enable
 function eventARVintervention_enable(SDS, P0)
 % by eventBirth, eventTransmission
 % new random number
-
 if ~P.enable
     return
 end
@@ -116,10 +110,12 @@ function [props, msg] = eventARVintervention_properties
 
 props.ARV_expansion_strategies = {
 'target population'            'time'         'CD4 threshold'         'coverage'
-'population'                      '01-Jan-2050'     350         60  
-'pregnant women'            '01-Jan-2050'       350       60
-'serodiscordant couples'  '01-Jan-2050'     350         60
-'female sex workers'        '01-Jan-2050'       350       60
+'all HIV+'                           '01-Jan-2050'     500         40  
+'pregnant women'            '01-Jan-2050'       500       40
+'serodiscordant couples'  '01-Jan-2050'     500         40
+'female sex workers'        '01-Jan-2050'       500       40
+'aged 50+'                        '01-Jan-2050'       500       40
+'non-breastfeeding'          '01-Jan-2050'       500        40
 };
 msg = 'ARV treatment interventions implemented by ARV intervention event.';
 end

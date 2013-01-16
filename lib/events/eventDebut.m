@@ -36,11 +36,10 @@ end
         end
         
         P.eventTimes = inf(1, elements, SDS.float);
-        if ~P.enable
-            return
-        end
+        debut_age = event.debut_age;
+        P.debut = debut_age + wblrnd(1,2,1,elements);
         age = -[SDS.males.born, SDS.females.born];
-        P.eventTimes = P.debut_age-age;
+        P.eventTimes = P.debut-age;
         P.eventTimes(P.eventTimes<0) = Inf;
     end
 
@@ -112,7 +111,7 @@ end
             
             
             P0 = P.enableFormation(P0);
-            
+
             P.eventTimes(P0.index) = Inf;
     end
 
@@ -120,11 +119,11 @@ end
 %% enable
     function eventDebut_enable(index)
         % Invoked by eventConception_fire
-        return
+        
         if ~P.enable
             return
         end       
-        P.eventTimes(index) = P.debut_age;
+        P.eventTimes(index) = P.debut(index);
     end
 %% intervene
     function eventDebut_intervene(P0,names,values,start)

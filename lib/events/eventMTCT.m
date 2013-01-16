@@ -32,7 +32,7 @@ end
         % ******* Function Handles *******
         P.weibullEventTime = spTools('handle', 'weibullEventTime');
         [P.enableAIDSmortality, thisMsg] = spTools('handle', 'AIDSmortality', 'enable');
-        [P.fireTest, thisMsg] = spTools('handle', 'Test', 'fire');
+       % [P.fireTest, thisMsg] = spTools('handle', 'Test', 'fire');
         
         % ******* Variables & Constants *******
         P.randBreastfeeding = rand(1, SDS.number_of_females);
@@ -150,6 +150,8 @@ end
         if isnan(time)
             time = 0;
         end
+        
+        P0.breastfeedingStop(mother) = min(latestBorn,P0.now)+time;
         
         survival = SDS.females.AIDSdeath(mother);
         timeHIVpos = SDS.females.HIV_positive(mother);
