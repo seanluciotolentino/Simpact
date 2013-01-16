@@ -225,6 +225,7 @@ end
 handles.frame.setVisible(true)
 %awtinvoke(handles.frame, 'setVisible(Z)', true);    % memory leak issue?
 
+
 % ******* Debugging *******
 % if Prefs.debug
 %     base(handles)

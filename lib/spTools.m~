@@ -279,7 +279,7 @@ function integral = spTools_intExpLinear(alpha, beta, t1, t2)
 % with integral:
 %   H(t1-t2) = 1/beta exp(alpha)(exp(beta t2) - exp(beta t1))
 
-integral = exp(alpha) .* (exp(beta .* t2) - exp(beta .* t1)) ./ beta;
+integral = exp(alpha) .* (exp(beta * t2) - exp(beta .* t1)) ./ beta;
 
 beta0idx = beta == 0;
 if ~any(beta0idx)
@@ -510,10 +510,8 @@ ARV = [header
 
 % ******* Store *******
 folder ='result/csv'; 
-if ~isdir(folder)
-mkdir(folder);
-end
-file=SDS.data_file(14:17);
+mkdir(file);
+file=sprintf('%04d', index);
 save(fullfile(folder, ['sds_', file, '.mat']), 'SDS');
 [ok, msg] = exportCSV_print(fullfile(folder, ['allC_', file, '.csv']), allC);
 [ok, msg] = exportCSV_print(fullfile(folder,['relation_', file,'.csv']),relations);
