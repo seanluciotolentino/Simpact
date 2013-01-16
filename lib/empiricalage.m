@@ -1,4 +1,4 @@
-function agevector=empiricalage(n)
+function agevector=empiricalage(n,ladu,kadu)
 % Generates a vector agevector of length n with the age of the individuals,
 % according to 2 Weibull distributions with parameters set in the function
 % "testje2".
@@ -18,12 +18,10 @@ measures=0:0.01:200;
 
 solution2 = fzero(@myfunction,1);
 
-l=1/((nthroot(-log(1-0.06), solution2)));
+l=1/((nthroot(-log(1), solution2)));
 
 linf= l;
 kinf= solution2;
-ladu= 70;
-kadu= 4;
 
 answer = testje2(measures,linf, kinf, ladu, kadu);
 agevector=[];
@@ -47,7 +45,7 @@ function F = myfunction(k)
 Q6 = 1;  % 6% infant mortality after 1 year;
 Q9 = 5;  % 9% child mortality after 5 years;
 
-F=1-exp(-((Q9*(nthroot(-log(1-0.06), k)))^k))-0.09;
+F=1-exp(-((Q9*(nthroot(-log(1), k)))^k));
 
 
 function answer = testje2(time,linf,kinf,ladu,kadu)  % time is a vector of the form time = [0:0.01:200];
