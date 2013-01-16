@@ -1,0 +1,15 @@
+#!/bin/bash -l
+#PBS -l walltime=24:00:00
+#PBS -l nodes=1:ppn=8
+#PBS -l pmem=3gb
+#PBS -m ae
+#PBS -M fei.meng@uhasselt.be
+
+module load matlab/R2011b
+cd $PBS_O_WORKDIR
+
+folder="${VSC_DATA}/Simpact/"
+
+./run_trial.sh /apps/leuven/matlab/R2011b/ \
+               ${run} ${population} ${repeat} ${folder}
+
