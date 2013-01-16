@@ -372,30 +372,40 @@ function jproject_setPath(folder)
 
 evalin('base', 'clear classes')
 
-path(pathdef)   % doesn't remove user path(s)
+if ~isdeployed
+    path(pathdef)   % doesn't remove user path(s)
+end
 
 if exist(folder, 'dir') == 7
     cd(folder)
-    addpath(folder, '-end')
+    if ~isdeployed
+        addpath(folder, '-end')
+    end
 end
 
 libFolder  = fullfile(folder, 'lib');
 if exist(libFolder, 'dir') == 7
     libPaths = genpath(libFolder);
     libPaths = jproject_pathArch(libPaths);
-    addpath(libPaths, '-end')   % add lib folder & subfolders
+    if ~isdeployed
+        addpath(libPaths, '-end')   % add lib folder & subfolders
+    end
     
     warnState = warning('off', 'MATLAB:Java:DuplicateClass');
-    javaaddpath(libFolder)      % add lib folder to dynamic Java path
-    for thisJar = dir(fullfile(libFolder, '*.jar'))'
-        javaaddpath(fullfile(libFolder, thisJar.name), '-end')
+    if ~isdeployed
+        javaaddpath(libFolder)      % add lib folder to dynamic Java path
+        for thisJar = dir(fullfile(libFolder, '*.jar'))'
+            javaaddpath(fullfile(libFolder, thisJar.name), '-end')
+        end
     end
     warning(warnState)
 end
 
 srcFolder  = fullfile(folder, 'src');
 if exist(srcFolder, 'dir') == 7
-    addpath(srcFolder, '-end') % add src folder
+    if ~isdeployed
+        addpath(srcFolder, '-end') % add src folder
+    end
 end
 end
 
