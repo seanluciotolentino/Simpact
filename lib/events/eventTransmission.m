@@ -226,11 +226,13 @@ end
         if ~P0.serodiscordant(P0.male, P0.female)
             return
         end
+        relationID = intersect(find(SDS.relations.ID(:,1)==P0.male),find(SDS.relations.ID(:,2)==P0.female));
+        relationID = relationID(end);
         
         timeHIVpos = SDS.males.HIV_positive(P0.male);
         idx = P0.male;
         ARV = SDS.males.ARV(P0.male);
-        condom = SDS.males.condom(P0.male); %added by Lucio
+        condom = SDS.males.condom(P0.male) || SDS.relations.time(relationID,SDS.index.condom); %added by Lucio
         pregnant = false;
         circumcision = ~isnan(SDS.males.circumcision(P0.male));
         if isnan(timeHIVpos)
@@ -239,6 +241,7 @@ end
             idx = SDS.number_of_males + P0.female;
             ARV = SDS.females.ARV(P0.female);
             pregnant = P0.pregnant(P0.female);
+			condom = SDS.males.condom(P0.female) || SDS.relations.time(relationID,SDS.index.condom);
             %circumcision = false;
         end
         
@@ -252,7 +255,7 @@ end
             end
             
             if ARV
-                P.probabilityChange(P0.male,P0.female) = 1-P.infectiousness_decreased_by_ARV;
+                P.probabilityChange(P0.male,P0.female) = P.probabilityChange(P0.male,P0.female)*(1-P.infectiousness_decreased_by_ARV);
             end
             
             if pregnant
@@ -266,13 +269,8 @@ end
         
         probability = P.probability * P.probabilityChange(P0.male,P0.female);
         loglogP =  log(-log(1- probability/100));
-        %loglogP = log(probability/100);
         a = P.alpha(P0.male, P0.female) + loglogP;
         T = [timeHIVpos, P.t(2:end, idx)'+timeHIVpos];        
-%         T = [timeHIVpos, P.t(2:end, idx)'];
-%         T = cumsum(T);
-        relationID = intersect(find(SDS.relations.ID(:,1)==P0.male),find(SDS.relations.ID(:,2)==P0.female));
-        relationID = relationID(end);
         Tformation = SDS.relations.time(relationID,1);
         
         P.eventTimes(P0.male, P0.female) = ...
@@ -291,7 +289,9 @@ end
         
         timeHIVpos = SDS.males.HIV_positive(P0.male);
         idx = P0.male;
-        condom = SDS.males.condom(P0.male); %added by Lucio
+        relationID = intersect(find(SDS.relations.ID(:,1)==P0.male),find(SDS.relations.ID(:,2)==P0.female));
+        relationID = relationID(end);
+        condom = SDS.males.condom(P0.male)|| SDS.relations.time(relationID,SDS.index.condom); %added by Lucio
         circumcision = SDS.males.circumcision(P0.male) ==P0.now;
         ARVstart = SDS.males.ARV_start(P0.male) == P0.now;
         ARVstop = SDS.males.ARV_stop(P0.male) == P0.now;
@@ -312,8 +312,7 @@ end
         T = [timeHIVpos, P.t(2:end, idx)'+timeHIVpos];        
 %         T = [timeHIVpos, P.t(2:end, idx)'];
 %         T = cumsum(T);
-        relationID = intersect(find(SDS.relations.ID(:,1)==P0.male),find(SDS.relations.ID(:,2)==P0.female));
-        relationID = relationID(end);
+
         Tformation = SDS.relations.time(relationID,1);
         a = P.alpha(P0.male, P0.female) + loglogP;
         P.rand(P0.male,P0.female) = P.rand(P0.male,P0.female) ...
