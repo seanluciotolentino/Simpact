@@ -15,11 +15,30 @@ function cumincidence = spData_CumulativeIncidence(SDS)
     %Cumulative incidence -- the total number of cases that occured before each
     %year
 
-    numyears = ceil((datenum(SDS.end_date) - datenum(SDS.start_date))/365);
+    numyears = ceil(spTools('dateTOsimtime',SDS.end_date,SDS.start_date));
     cumincidence = zeros(1,numyears);
+    SDS.males.deceased(isnan(SDS.males.deceased))=Inf;
     for i = 1:numyears
-        cumincidence(i) = length([ find(SDS.males.HIV_positive<i)  find(SDS.females.HIV_positive<i)]);
+        cumincidence(i) =  sum(SDS.males.HIV_positive<i) + sum(SDS.females.HIV_positive<i);
     end
+    SDS.males.deceased(isinf(SDS.males.deceased))=NaN;
+end
+
+function prevalence = spData_Prevalence(SDS)
+    %Cumulative incidence -- the total number of cases that occured before each
+    %year
+
+    numyears = ceil(spTools('dateTOsimtime',SDS.end_date,SDS.start_date));
+    prevalence = zeros(1,numyears);
+    SDS.males.deceased(isnan(SDS.males.deceased))=Inf;
+    SDS.females.deceased(isnan(SDS.females.deceased))=Inf;
+    for i = 1:numyears
+        prevalence(i) =  sum(SDS.males.HIV_positive<i & SDS.males.deceased>i)...
+                        + sum(SDS.females.HIV_positive<i & SDS.females.deceased>i);
+        prevalence(i) = prevalence(i)/sum(~isnan(SDS.males.born) & SDS.males.deceased>i);
+    end
+    SDS.males.deceased(isinf(SDS.males.deceased))=NaN;
+    SDS.females.deceased(isinf(SDS.females.deceased))=NaN;
 end
 
 function totalLYL = spData_LYL(SDS)
@@ -77,7 +96,7 @@ function [ss,matout] = spData_SummaryStatistics(SDS,flag)
 %vector to screen for easier export.
 
 yearssimulated = spTools('dateTOsimtime',SDS.end_date,SDS.start_date);
-samplesize = 40; %WHY ? 
+samplesize = 100; %WHY ? 
 if isfield(SDS,'bornmin')
 	bornmin = SDS.bornmin;
 else
@@ -160,7 +179,8 @@ ss.total_lifetime_partners.level4 = sum(num_partners>14);
 %concurrent relationships in the past year
 concurrent = false(1,samplesize); %set everyone to false
 for mm=1:samplesize
-    hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==men(mm)); %the relationships of this male
+    hisrelationships = find(SDS.relations.ID(:,SDS.index.male)==men(mm)...
+                & SDS.relations.time(:,SDS.index.stop)>yearssimulated-1 ); %the relationships of this male
     for r=hisrelationships'
         start = SDS.relations.time(r,SDS.index.start);
         for rr = hisrelationships'
@@ -175,7 +195,7 @@ end
 ss.concurrent_relationships = sum(concurrent);
 
 %duration of relation
-num_rela = sum(~isnan(SDS.relations.time(:,1)));
+num_rela = sum(~isnan(SDS.relations.time(:,1)))-1;
 durations = SDS.relations.time(1:num_rela,SDS.index.stop) - SDS.relations.time(1:num_rela,SDS.index.start);
 durations = sort(durations.*52); %convert years to weeks
 ss.duration_of_relationships.mean = mean(durations);
@@ -186,6 +206,7 @@ ss.duration_of_relationships.uq = durations(ceil(.75*length(durations)));
 ss.duration_of_relationships.level1 = (sum(durations<2)/length(durations))*100;
 ss.duration_of_relationships.level2 = (sum(durations>=2 & durations<=39)) /length(durations)*100;
 ss.duration_of_relationships.level3 = (sum(durations>39)) /length(durations)*100;
+ss.duration_of_relationships.note = 'These numbers are in weeks';
 
 %partner turnover --not used in VLIR comparison
 %first, calculate person years of men:
