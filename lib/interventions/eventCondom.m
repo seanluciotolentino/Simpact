@@ -69,7 +69,8 @@ end
 
 %% fire1
     function [SDS,P0] = eventCondom1_fire(SDS, P0)    
-		pop = SDS.initial_number_of_males + SDS.initial_number_of_females; %only in the case where nobody is born
+		pop = sum(~isnan(SDS.males.born) & isnan(SDS.males.deceased)) ...
+                     + sum(~isnan(SDS.females.born) & isnan(SDS.females.deceased) ) ;
         percentage_reached = (P.start_spend{1,2}/pop);    
         if percentage_reached<= 0 %if you run out of condoms this campaign is over
             return
@@ -111,7 +112,7 @@ end
         for m = 1:SDS.number_of_males %for all males
             r = rand;
             %if (he is in concurrent relationships)                         %&& (we find him)
-            if (sum(SDS.relations.ID(activeRelations,SDS.index.male)==m)>P.risk_threshold) && (r < P.finding_effectiveness)
+            if (sum(SDS.relations.ID(activeRelations,SDS.index.male)==m)>=P.risk_threshold) && (r < P.finding_effectiveness)
                 SDS.males.condom(m) = 1; %give this guy one of your condoms
                 P0.male = m;
                 num_condoms = num_condoms-1;
@@ -127,7 +128,7 @@ end
         for f = 1:SDS.number_of_females %for all females
             r = rand;
             %if (she is in concurrent relationships)                         %&& (we find her)
-            if (sum(SDS.relations.ID(activeRelations,SDS.index.male)==f)>P.risk_threshold) && (r < P.finding_effectiveness)
+            if (sum(SDS.relations.ID(activeRelations,SDS.index.male)==f)>=P.risk_threshold) && (r < P.finding_effectiveness)
                 SDS.females.condom(f) = 1; %give this guy one of your condoms
                 P0.female = f;
                 num_condoms = num_condoms-1;
@@ -163,7 +164,7 @@ end
         for m = 1:SDS.number_of_males %for all males
             r = rand;
             %if (he is HIV positive)               && (we find him)
-            if (SDS.males.HIV_positive(m)<=P0.now) && (r < P.finding_effectiveness)
+            if (~isnan(SDS.males.HIV_positive(m)) ) && (r < P.finding_effectiveness)
                 SDS.males.condom(m) = 1; %give this guy one of your condoms
                 num_condoms = num_condoms-1;
                 if num_condoms<= 0 %if you run out of condoms this campaign is over
@@ -178,7 +179,7 @@ end
         for f = 1:SDS.number_of_females %for all females
             r = rand;
             %if (she is HIV positive)               && (we find her)
-            if (SDS.females.HIV_positive(f)<=P0.now) && (r < P.finding_effectiveness)
+            if (~isnan(SDS.females.HIV_positive(f))  ) && (r < P.finding_effectiveness)
                 SDS.females.condom(f) = 1; %give this guy one of your condoms
                 num_condoms = num_condoms-1;
                 if num_condoms<= 0 %if you run out of condoms this campaign is over
@@ -257,6 +258,10 @@ end
 	
 %% fire5
 	function [SDS,P0] = eventCondom5_fire(SDS, P0)   
+        % Intervention that targets those that are in a relationship with
+        % someone that is in multiple relationships (target high
+        % "perceived" risk individuals).  There is some work that can be
+        % done to move from for-loops to vectorized.
 		num_condoms = P.num_condoms{5};
 		if num_condoms<= 0 %if you run out of condoms this campaign is over
 			return
@@ -273,15 +278,15 @@ end
 			hisrelationships =  find(SDS.relations.ID(...
 				SDS.relations.time(:, SDS.index.stop) == Inf,...
 				SDS.index.male)==m);
-			if size(hisrelationships,1)<=0
-				continue %no need to check his relationships if there are none
-			end
+            % if size(hisrelationships,1)<=0 %this check is unnecessary I think
+            %     continue %no need to check his relationships if there are none
+            % end
 			
 			%check each relationship to see if the female is risky looking
 			for r = hisrelationships'
 				f = SDS.relations.ID(r,SDS.index.female);
 				%if (his partner is perceived as risky )     
-				if (sum(SDS.relations.ID(:,SDS.index.female)==f)>P.risk_threshold) 
+				if (sum(SDS.relations.ID(:,SDS.index.female)==f)>=P.risk_threshold) 
 					SDS.males.condom(m) = 1; %give this guy one of your condoms
 					num_condoms = num_condoms-1;
 					break %we can go onto the next male
@@ -304,15 +309,15 @@ end
 			herrelationships =  find(SDS.relations.ID(...
 				SDS.relations.time(:, SDS.index.stop) == Inf,...
 				SDS.index.male)==f);
-			if size(herrelationships,1)<=0
-				continue %no need to check her relationships if there are none
-			end
+            % if size(herrelationships,1)<=0
+            %     continue %no need to check her relationships if there are none
+            % end
 			
 			%check each relationship to see if the male is risky looking
 			for r = herrelationships'
 				m = SDS.relations.ID(r,SDS.index.male);
 				%if (his partner is perceived as risky )          
-				if (sum(SDS.relations.ID(:,SDS.index.male)==m)>P.risk_threshold) 
+				if (sum(SDS.relations.ID(:,SDS.index.male)==m)>=P.risk_threshold) 
 					SDS.males.condom(f) = 1; %give this guy one of your condoms
 					num_condoms = num_condoms-1;     
 					break %we can go onto the next female              
