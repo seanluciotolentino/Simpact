@@ -50,7 +50,7 @@ end
         for m = 1:SDS.number_of_males %for all males
             r = rand;
             %if (he is HIV positive)               && (we find him)
-            if (SDS.males.HIV_positive(m)<=P0.now) && (r < P.finding_effectiveness) && ~SDS.males.ARV(m)
+            if (~isnan(SDS.males.HIV_positive(m))) && (r < P.finding_effectiveness) && ~SDS.males.ARV(m)
                 SDS.males.ARV(m) = 1; %give this guy one of your arvs
                 P.num_arv = P.num_arv-1;
                 if P.num_arv<= 0 %if you run out of ARV this campaign is over
@@ -63,7 +63,7 @@ end
         for f = 1:SDS.number_of_females %for all females
             r = rand;
             %if (she is HIV positive)               && (we find her)
-            if (SDS.females.HIV_positive(f)<=P0.now) && (r < P.finding_effectiveness)&& ~SDS.females.ARV(f)
+            if (~isnan(SDS.females.HIV_positive(f))) && (r < P.finding_effectiveness)&& ~SDS.females.ARV(f)
                 SDS.females.ARV(f) = 1; %give this guy one of your ARV
                 P.num_arv = P.num_arv-1;
                 if P.num_arv<= 0 %if you run out of ARV this campaign is over
