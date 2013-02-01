@@ -35,7 +35,8 @@ function prevalence = spData_Prevalence(SDS)
     for i = 1:numyears
         prevalence(i) =  sum(SDS.males.HIV_positive<i & SDS.males.deceased>i)...
                         + sum(SDS.females.HIV_positive<i & SDS.females.deceased>i);
-        prevalence(i) = prevalence(i)/sum(~isnan(SDS.males.born) & SDS.males.deceased>i);
+        prevalence(i) = prevalence(i)/ (sum(~isnan(SDS.males.born) & SDS.males.deceased>i) ...
+                                           + sum(~isnan(SDS.females.born) & SDS.females.deceased>i) );
     end
     SDS.males.deceased(isinf(SDS.males.deceased))=NaN;
     SDS.females.deceased(isinf(SDS.females.deceased))=NaN;
