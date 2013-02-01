@@ -241,7 +241,7 @@ end
             idx = SDS.number_of_males + P0.female;
             ARV = SDS.females.ARV(P0.female);
             pregnant = P0.pregnant(P0.female);
-			condom = SDS.males.condom(P0.female) || SDS.relations.time(relationID,SDS.index.condom);
+			condom = SDS.females.condom(P0.female) || SDS.relations.time(relationID,SDS.index.condom);
             %circumcision = false;
         end
         
@@ -300,6 +300,7 @@ end
             % female is HIV+
             timeHIVpos = SDS.females.HIV_positive(P0.female);
             idx = SDS.number_of_males + P0.female;
+            condom = SDS.females.condom(P0.female)|| SDS.relations.time(relationID,SDS.index.condom); 
             ARVstart = SDS.females.ARV_start(P0.female) == P0.now;
             ARVstop = SDS.females.ARV_stop(P0.female) == P0.now;
             timeDeath = SDS.females.AIDSdeath(P0.female);
