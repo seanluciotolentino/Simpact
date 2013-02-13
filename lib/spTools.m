@@ -263,7 +263,7 @@ end
 %% simtimeTOdate
 function date = spTools_simtimeTOdate(sim_time,start_date)
     daysPerYear = spTools_daysPerYear;
-    date = datestr((sim_time*daysPerYear)+datenum(start_date)) ;
+    date = datestr((sim_time*daysPerYear)+datenum(start_date),1) ;
 end
 
 %% dateTOsimtime
