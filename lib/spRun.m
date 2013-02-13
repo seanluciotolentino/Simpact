@@ -111,7 +111,7 @@ end
                 handles.progress(min(1, progress), handles)
                 break
             end
-            %handles.progress(progress, handles)
+            handles.progress(progress, handles) %comment this out to get rid of constant updates
         end
         
         elapsedTime = timestr(toc);
