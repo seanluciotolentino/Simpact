@@ -57,7 +57,7 @@ function [SDS, P0] = eventMaleCircumcision_execute(SDS, P0)
         return
     else
         %nothing needs to actually happen here because it was implemented
-        %in the event
+        %in the event -- eventually MC should be migrated to this event
         
         
         % SDS.male_circumcision.campaign_start_date = P.start_date; %this is changing the event
@@ -98,7 +98,7 @@ props.start_date = '26-Jun-2050'; %default is off
 props.duration = 5;
 props.scale = 1;
 
-props.percentage_reached = .1; %is this h
+props.percentage_reached = .1; %probability of finding an individual that requires circumcision
 
 
 end

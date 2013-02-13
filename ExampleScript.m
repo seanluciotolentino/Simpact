@@ -7,11 +7,21 @@ warning off
 %One run of the modelHIV
 [SDS,msg] = modelHIV('new'); %generates a new SDS with all the required stuff
 
-SDS.number_of_males = 10; %set parameters of the model manually
-SDS.number_of_females = 10;
+SDS.number_of_males = 100; %set parameters of the model manually
+SDS.number_of_females = 100;
 SDS.initial_number_of_females = SDS.number_of_females/2;
 SDS.initial_number_of_males = SDS.number_of_males/2;
-SDS.number_of_relations = 10^2;
+SDS.number_of_relations =SDS.number_of_males^2;
+
+% SDS.events.antenatal_care.enable = 0;
+% SDS.events.ARV_treatment.enable = 0;
+% SDS.events.ARV_stop.enable = 0;
+% SDS.events.male_circumcision.enable =0;
+% SDS.events.MTCT_transmission.enable = 0;
+SDS.events.HIV_test.enable = 0;
+SDS.events.test.enable = 0;
+SDS.events.debut.enable = 0;
+% SDS.events.conception.enable = 0;
 
 [SDS2, ~] = spRun('start',SDS); %actually run the model
 fprintf(1,'\n')
