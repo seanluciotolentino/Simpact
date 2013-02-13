@@ -98,40 +98,42 @@ end
         femaleBorn = SDS.females.born;
         ratio = P.gender_ratio/(P.gender_ratio+1);
         
-%         for ti = P.rand
-%             if rand<=ratio
-%                 age = ti-maleBorn;
-%                 prob = (interp1q([15 32 60]',[0 0.26 0]',age(1:SDS.initial_number_of_males)'))';
-%                 prob(isnan(prob)) = 0;
-%                 prob = cumsum(prob/sum(prob));
-%                 infectedIdx = min(find(prob>rand));
-%                 P.eventTimes(infectedIdx) = ti;
-%             else
-%                 age = ti-femaleBorn;
-%                 prob = (interp1q([15 27 65]',[0 0.33 0]',age(1:SDS.initial_number_of_females)'))';
-%                 prob(isnan(prob)) = 0;
-%                 prob = cumsum(prob/sum(prob));
-%                 infectedIdx = min(find(prob>rand));
-%                 P.eventTimes(infectedIdx+SDS.number_of_females) = ti;
-%             end          
-%         end   
+        for ti = P.rand
+            if rand<=ratio
+                age = ti-maleBorn;
+                prob = (interp1q([15 32 60]',[0 0.26 0]',age(1:SDS.initial_number_of_males)'))';
+                prob(isnan(prob)) = 0;
+                prob = cumsum(prob/sum(prob));
+                infectedIdx = min(find(prob>rand));
+                P.eventTimes(infectedIdx) = ti;
+            else
+                age = ti-femaleBorn;
+                prob = (interp1q([15 27 65]',[0 0.33 0]',age(1:SDS.initial_number_of_females)'))';
+                prob(isnan(prob)) = 0;
+                prob = cumsum(prob/sum(prob));
+                infectedIdx = min(find(prob>rand));
+                P.eventTimes(infectedIdx+SDS.number_of_females) = ti;
+            end          
+        end   
 
-        %males
-        age = 0-maleBorn;
-        prob = (interp1q([15 32 60]',[0 0.26 0]',age(1:SDS.initial_number_of_males)'))';
-        possibleinfected = find(~isnan(prob));
-        possibleinfected = possibleinfected(randperm(length(possibleinfected)));
-        infect = possibleinfected(1:P.intro*P.gender_ratio);
-        P.eventTimes(infect) = P.intro_time{2,1};
-        
-        %females
-        age = 0-femaleBorn;
-        prob = (interp1q([15 32 60]',[0 0.26 0]',age(1:SDS.initial_number_of_females)'))';
-        possibleinfected = find(prob);
-        possibleinfected = possibleinfected(randperm(length(possibleinfected)));
-        infect = possibleinfected(1:P.intro*(1-P.gender_ratio));
-        P.eventTimes(infect+SDS.number_of_females) = P.intro_time{2,1};
-               
+        % Lucio's Introduction: Ralph's didn't seem to have all the
+        % infected sometimes.  
+        % %males
+        % age = 0-maleBorn;
+        % prob = (interp1q([15 32 60]',[0 0.26 0]',age(1:SDS.initial_number_of_males)'))';
+        % possibleinfected = find(~isnan(prob));
+        % possibleinfected = possibleinfected(randperm(length(possibleinfected)));
+        % infect = possibleinfected(1:P.intro*P.gender_ratio);
+        % P.eventTimes(infect) = P.intro_time{2,1};
+        % 
+        % %females
+        % age = 0-femaleBorn;
+        % prob = (interp1q([15 32 60]',[0 0.26 0]',age(1:SDS.initial_number_of_females)'))';
+        % possibleinfected = find(prob);
+        % possibleinfected = possibleinfected(randperm(length(possibleinfected)));
+        % infect = possibleinfected(1:P.intro*(1-P.gender_ratio));
+        % P.eventTimes(infect+SDS.number_of_females) = P.intro_time{2,1};
+
     end
 
 %% block

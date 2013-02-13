@@ -167,6 +167,8 @@ pip-log.txt
 lucio/*
 fei/*
 wim/*
+MonteCarloResults/*
+SDSResults/*
 ~archive/*
 *.m~  #files on hold
 *.asv #files currently being edited

@@ -429,9 +429,9 @@ end
         
         P0.firedEvent(end + 1) = eventIdx;
         t = P0.now;
-        if P0.now >= 5
+        %if P0.now >= 5
             %save P0.mat P0
-        end
+        %end
     end
 end
 
