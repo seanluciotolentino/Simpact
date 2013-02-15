@@ -33,7 +33,7 @@ end
         
         msg = '';
         
-        %spTools('resetRand')	% reset random number generator
+        spTools('resetRand')	% reset random number generator
         
         % ******* Function Handles *******
         %empiricalExposure = spTools('handle', 'empiricalExposure');
@@ -378,42 +378,28 @@ end
         % ******* 2: Find First Event & Its Entry *******
         [P0.eventTime, firstIdx] = min(P0.eventTimes);  % index into event times
         
- 
-        
+        %if events happened at very similar time, this may occur
         if P0.eventTime <= 0
-%             problem = find(P0.cumsum >= firstIdx, 1) - 1
-%             time = P0.eventTime
-            %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
-            P0.eventTime = 0.0001;
-            %keyboard
+           P0.eventTime = 0.0001;
         end
+        
+        %if no other events are going to occur
         if ~isfinite(P0.eventTime)
             t = Inf;
             return
         end
+        
         eventIdx = find(P0.cumsum >= firstIdx, 1) - 1;  % index of event
         P0.index = firstIdx - P0.cumsum(eventIdx);      % index into event
         
         % ******* 3: Update Time *******
-        %SDS.now(end + 1, 1) = SDS.now(end) + P0.eventTime;
         P0.now = P0.now + P0.eventTime;
         P0.maleAge = P0.maleAge + P0.eventTime;
         P0.femaleAge = P0.femaleAge + P0.eventTime;
-        %P0.meanAge = P0.meanAge + P0.eventTime;
         P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
         P0.ageDifference = P0.maleAge - P0.femaleAge;
         
         P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
-        % P0.riskyBehaviour =  P0.meanAge + P0.ageDifference + P0.relationCount + P0.relationsTerm + P0.serodiscordant;        
-        %{
-        P0.meanAgeSex 
-        P0.ageDifferenceSex
-        P0.relationTypeSex
-        P0.relationCountSex
-        P0.serodiscordantSex
-        P0.disclosureSex 
-            %}
-       
         P0.subset = P0.true;
         P0.subset(~P0.aliveMales, :) = false;
         P0.subset(:, ~P0.aliveFemales) = false;   
@@ -426,12 +412,8 @@ end
         
         % ******* 5: Fire First Event *******
         [SDS, P0] = P0.event(eventIdx).fire(SDS, P0);
-        
         P0.firedEvent(end + 1) = eventIdx;
         t = P0.now;
-        %if P0.now >= 5
-            %save P0.mat P0
-        %end
     end
 end
 
