@@ -35,38 +35,19 @@ end
         P.rand0toInf = spTools('handle', 'rand0toInf');
         P.expLinear = spTools('handle', 'expLinear');
         P.intExpLinear = spTools('handle', 'intExpLinear');
-        [P.enableFormation, thisMsg] = spTools('handle', 'eventFormation', 'enable');
-        %[P.enableFormation, thisMsg] = spTools('handle', 'eventFormationBCC', 'enable');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        [P.blockConception, thisMsg] = spTools('handle', 'eventConception', 'block');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        [P.blockTransmission, thisMsg] = spTools('handle', 'eventTransmission', 'block');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        [P.updateTest, thisMsg] = spTools('handle', 'eventTest', 'update');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
+        [P.enableFormation, forMsg] = spTools('handle', 'eventFormation', 'enable');
+        [P.blockConception, conMsg] = spTools('handle', 'eventConception', 'block');
+        [P.blockTransmission, traMsg] = spTools('handle', 'eventTransmission', 'block');
+        [P.updateTest, tesMsg] = spTools('handle', 'eventTest', 'update');
+        msg = [conMsg forMsg traMsg tesMsg]; 
         
         % ******* Variables & Constants *******
         P.alpha = -inf(SDS.number_of_males, SDS.number_of_females, SDS.float);
         P.beta = P.mean_age_factor + P.last_change_factor;
-        %P.rand = inf(SDS.number_of_males, SDS.number_of_females);
         P.rand = P.rand0toInf(SDS.number_of_males, SDS.number_of_females);
-        %P.time0 = zeros(SDS.number_of_males, SDS.number_of_females, SDS.float);
         P.eventTimes = inf(SDS.number_of_males, SDS.number_of_females, SDS.float);
         P.false = false(SDS.number_of_males, SDS.number_of_females);
-        
-        %         P.long_term_factor = event.relations_type_factor{2,1};
-        %         P.regular_factor = event.relations_type_factor{2,2};
-        %         P.casual_factor = event.relations_type_factor{2,3};
-        %
-        % ******* Checks *******
+
         if P.beta == 0
             P.expLinear = spTools('handle', 'expConstant');
             P.intExpLinear = spTools('handle', 'intExpConstant');
@@ -79,42 +60,6 @@ end
         X = P;
     end
 
-%% restore
-    function [elements,msg] = eventDissolution_restore(SDS,X)
-        
-        elements = SDS.number_of_males * SDS.number_of_females;
-        msg = '';
-        
-        P = X;
-        P.enable = SDS.dissolution.enable;
-        P.rand0toInf = spTools('handle', 'rand0toInf');
-        P.expLinear = spTools('handle', 'expLinear');
-        P.intExpLinear = spTools('handle', 'intExpLinear');
-        %[P.enableFormation, thisMsg] = spTools('handle', 'eventFormation', 'enable');
-        [P.enableFormation, thisMsg] = spTools('handle', 'eventFormationBCC', 'enable');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        [P.blockConception, thisMsg] = spTools('handle', 'eventConception', 'block');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        [P.blockTransmission, thisMsg] = spTools('handle', 'eventTransmission', 'block');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        [P.updateTest, thisMsg] = spTools('handle', 'eventTest', 'update');
-        if ~isempty(thisMsg)
-            msg = sprintf('%s%s\n', msg, thisMsg);
-        end
-        
-        
-        % ******* Checks *******
-        if P.beta == 0
-            P.expLinear = spTools('handle', 'expConstant');
-            P.intExpLinear = spTools('handle', 'intExpConstant');
-        end
-    end
 %% eventTimes
     function eventTimes = eventDissolution_eventTimes(~, ~)
         %{
@@ -265,22 +210,20 @@ function [props, msg] = eventDissolution_properties
 
 msg = '';
 
-props.baseline_factor = 0; %log(2);
-props.community_factor = -1;
-props.current_relations_factor = log(1.2); %log(4);
+%These values were found using a genetic algorithm with the 
+%output compared to the VLIR Cape Town Sexual Survey
+props.baseline_factor 				= 2.6; 
+props.community_factor 				= 0;
+props.current_relations_factor 		= 0.2303; 
 props.individual_behavioural_factor = 0;
-props.mean_age_factor = -log(5)/40; %-log(hazard ration)/(age2-age1);
-props.last_change_factor = log(0.7);
-props.age_limit = 15;
-props.age_difference_factor = 4.5;
-props.mean_age_growth = 0.1; %how preferred age difference grows with mean age
-props.mean_age_dispersion = 0.001; %how preferred age is dispersed with mean age (see documentation)
-props.transaction_sex_factor = 1;
-props.preferred_age_difference = 3;
-% props.relations_type_factor = {
-%   'long term' 'regular' 'casual'
-%   -log(2) -log(1.5) -log(0.5)
-%
-% };
+props.mean_age_factor 				= -0.05; 
+props.last_change_factor 			= -0.0154;
+props.age_limit 					= 15;
+props.age_difference_factor 		= 0.08;
+props.mean_age_growth 				= 1.917; 
+props.mean_age_dispersion 			= 0.4755;
+props.transaction_sex_factor 		= 0;
+props.preferred_age_difference 		= -0.2652;
+
 
 end
