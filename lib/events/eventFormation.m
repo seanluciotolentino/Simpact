@@ -238,6 +238,7 @@ end
         
         % ******* Shift Event Times *******
         P.eventTimes = P.eventTimes - P0.eventTime;
+   
     end
 
 
@@ -373,19 +374,38 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
 
     t0 = P.time0(P0.subset);    
     
-    alpha = P.baseline_factor*P0.partnering(P0.subset) + ...
+        alpha = P.baseline_factor*P0.partnering(P0.subset) + ...
         P.current_relations_factor*P0.relationCount(P0.subset) + ...
         P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
         P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ... 
         P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
-        P.age_difference_factor*(abs(P0.ageDifference(P0.subset) ...
-            - (P.preferred_age_difference*P0.meanAge(P0.subset)*P.mean_age_growth)...
-                )./ (P.preferred_age_difference*P0.meanAge(P0.subset)*P.mean_age_dispersion) ) + ...
+        P0.agediff(P0.subset).*((abs(P0.ageDifference(P0.subset) - ...
+        (P0.pref_age_diffMales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) ...
+        + abs(P0.ageDifference(P0.subset) - ...
+        (P0.pref_age_diffFemales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) ) ...
+        ./ ...
+        (P.dispersion_base + ((P0.meanAge(P0.subset) - P.age_limit).*P0.meanagedispersiongrowth(P0.subset)))) + ...
         P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
-        P.community_difference_factor*abs(P0.communityDifference(P0.subset));
-    % age difference factor used to be:
-    %P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
-    %    P.preferred_age_difference)/5)-1) + ...
+        P.community_difference_factor*abs(P0.communityDifference(P0.subset));    
+    
+           % Adjusting alpha to ensure constant population average partner
+    % turnover rate, equal to PTR
+    A = exp(alpha);
+    CFH = sum(exp(alpha));
+    Alives = sum(P0.aliveMales)+sum(P0.aliveFemales);
+    PTR = 1;
+    % cumulative formation hazard (CFH) = exp(A)
+    % A = log(CFH)
+    % 1/CFH = average duration till relationship / Alives
+    % 1/CFH = (1/PTR) / Alives
+    % CFH = Alives * PTR
+    CFHtarget = (Alives/2) * PTR;
+    % Atarget = log(Alives*PTR);
+    CFHcorrectionfactor = CFHtarget/CFH;
+    % A = A*Acorrectionfactor;
+    % CFH = CFH*CFHcorrectionfactor;
+    A = A * CFHcorrectionfactor;
+    alpha = log(A); 
     
     Pt = P.rand(P0.subset);
 
@@ -394,61 +414,11 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     eventTimes = P.eventTimes;
     eventTimes(P0.subset) = t; %grab the event times for the subset we want
     
-
-    %P0.current_relations_factorMean(P0.subset)
-    % ******* Hazard Parameters *******
-    %     P.alpha(P.subset) = repmat(P.baseline_factor*P0.partnering(P0.subset) + ...
-    %         P0.current_relations_factorMin(P0.subset).*P0.relationCount(P0.subset) + ...
-    %         P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
-    %         P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ... 
-    %         P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
-    %         P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
-    %         P.preferred_age_difference)/5)-1) + ...
-    %         P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
-    %         P.community_difference_factor*abs(P0.communityDifference(P0.subset)), [1 1 3]);  % 3D matrix
-
-    % P.individual_behavioural_factor*P0.riskyBehaviour(P0.subset)+...
-    % P.alpha(P.subset2) = P.alpha(P.subset2) - ...   alpha 2
-    %     P.behavioural_change_factor*P0.relationCount(P0.subset)*P.tBCC;
-    %P.alpha(:, :, 2) = P.alpha(:, :, 1) - ...       alpha 2
-    %    P.behavioural_change_factor.*P0.relationCount.*t1.*P0.BCCexposureMean/...
-    %    P.campaign_roll_out_duration;
-    %P.alpha(P.subset3) = P.alpha(P.subset3) + ...   alpha 3
-    %    P.behavioural_change_factor.*P0.relationCount(P0.subset).*...
-    %    P.campaign_roll_out_duration.*P0.BCCexposureMean(P0.subset);
-    %P.beta2(P0.subset) = P.beta + ...
-    %    P.behavioural_change_factor.*P0.relationCount(P0.subset).*P0.BCCexposureMean(P0.subset)/...
-    %    P.campaign_roll_out_duration;   % 2D matrix
-
-
-    % ******* Vectors *******
-    %alpha1 = P.alpha(P0.subset);        % <== no typo
-    %alpha2 = P.alpha(P.subset2);
-    %alpha3 = P.alpha(P.subset3);
-    %beta2 = P.beta2(P0.subset);
-    %Pt = P.rand(P0.subset);
-
-    %If BCC hasn't hit yet
-    % Phase 1 (before BCC)
-    %t = P.expLinear(alpha1, P.beta, t0, Pt); %Returns time till event given cum. haz + t0 for P0.subset
-            
-    %     idx2 = t > t1;              
-    %     % event times during phase 2 or 3
-    %     if any(idx2)                %If time till event is past start of BCC
-    %         T1 = P.intExpLinear(alpha1(idx2), P.beta, min(t1, t0(idx2)), t1); %Cum. haz from time min(t1,t0) to t1 using before BCC haz. params
-    %         t(idx2) = P.expLinear(alpha2(idx2), beta2(idx2), max(t1, t0(idx2)), Pt(idx2) - T1); %Time till event given (cum. haz - above) + max(t1, t0)
-    %                                                                                             %using BCC params
-    % 
-    %         idx3 = t > t2;         % event times during phase 3
-    %         if any(idx3)
-    %             T1 = P.intExpLinear(alpha1(idx3), P.beta, min(t1, t0(idx3)), t1); %Hazard used up until BCC
-    %             T2 = P.intExpLinear(alpha2(idx3), beta2(idx3), min(t2, max(t1, t0(idx3))), t2) + T1; %Hazard used up until end of BCC
-    %             t(idx3) = P.expLinear(alpha3(idx3), P.beta, max(t2, t0(idx3)), Pt(idx3) - T2); %Given above, time till event
-    %         end
-    %     end
+    % Updating cumulative hazards
     
-    %eventTimes = P.eventTimes;
-    %eventTimes(P0.subset) = t; %grab the event times for the subset we want
+%     P.rand(P0.subset(:)) = P.rand(P0.subset(:)) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
+    P.rand(:) = P.rand(:) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
+
 end
 
 end
@@ -468,20 +438,23 @@ function [props, msg] = eventFormation_properties
 msg = '';
 
 %props.campaign_start_date = datestr('01-Jan-2050');
-props.baseline_factor = log(40/200);
-props.current_relations_factor = log(0.2);
-props.current_relations_difference_factor = log(0.5);
+props.baseline_factor = log(0.05); %log(40/200);
+props.current_relations_factor = log(0.1);
+props.current_relations_difference_factor = 0; %log(0.5);
 props.individual_behavioural_factor = 0;
 %props.behavioural_change_factor = 0;    % The effect of relations becomes larger during BCC;
-props.mean_age_factor = -log(5)/40; %-log(hazard ration)/(age2-age1);
-props.last_change_factor = log(1.005);         % NOTE: intHazard = Inf for d = -c !!!
+props.mean_age_factor = 0; %-log(5)/40; %-log(hazard ration)/(age2-age1);
+props.last_change_factor = 0; %log(1.005);         % NOTE: intHazard = Inf for d = -c !!!
 props.age_limit = 15;                 % no couple formation below this age
-props.age_difference_factor =-log(5)/40;
-props.preferred_age_difference = 4.5;
-props.mean_age_growth = 0.1; %how preferred age difference grows with mean age
-props.mean_age_dispersion = 0.001; %how preferred age is dispersed with mean age (see documentation)
+props.age_difference_factor = -0.4; %-log(5)/40;
+props.preferred_age_difference = 0; %4.5;
+props.mean_age_growth = 0; %how preferred age difference grows with mean age
+props.dispersion_base = 1; %baseline dispersion for a couple of average age = age limit
+props.mean_age_dispersion = 0; % how dispersion grows with mean age
+
+props.mean_age_dispersion_growth = 0; % how dispersion grows with mean age
 props.community_difference_factor = 0;
-props.transaction_sex_factor = log(2);
+props.transaction_sex_factor = 0; %log(2);
 props.communities = {
     'lower exposure limit', 'upper exposure limit', 'exposure peak'
     0   .2  0
