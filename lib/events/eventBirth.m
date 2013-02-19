@@ -202,6 +202,8 @@ end
             case 'males'
                 %P0.alive(ID, :) = true;
                 P0.aliveMales(ID) = true;
+                P0.maleAge(ID,:) = zeros(1,SDS.number_of_females);
+                P0.timeSinceLast(ID, :) = -15*ones(1,SDS.number_of_females);
                 %P0.malecommID = repmat(SDS.males.commID(:), 1, SDS.number_of_females);
                 P0.maleCommunity(ID, :) = SDS.males.community(ID);
                 P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);
@@ -216,6 +218,8 @@ end
             case 'females'
                 %P0.alive(:, ID) = true;
                 P0.aliveFemales(ID) = true;
+                P0.femaleAge(:,ID) = zeros(SDS.number_of_males,1);
+                P0.timeSinceLast(:,ID) = -15*ones(SDS.number_of_males,1);
                 %P0.femalecommID = repmat(SDS.females.commID(:)', SDS.number_of_males, 1);
                 P0.femaleCommunity(:, ID) = SDS.females.community(ID);
                 P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);
