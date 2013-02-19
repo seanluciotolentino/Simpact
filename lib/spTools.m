@@ -471,7 +471,12 @@ for this = allFields
         malesM = [malesM, malesNaN];
         continue
     end
-    malesM = [malesM, cast(SDS.males.(this{1})(maleIdx)', SDS.float)];
+    dims = size(SDS.males.(this{1})(maleIdx));
+    if dims(1)<dims(2)
+        malesM = [malesM, cast(SDS.males.(this{1})(maleIdx)', SDS.float)];
+    else
+        malesM = [malesM, cast(SDS.males.(this{1})(maleIdx), SDS.float)];
+    end
 end
 
 femaleIdx = isfinite(SDS.females.born);
@@ -485,7 +490,12 @@ for this = allFields
         femalesM = [femalesM, femalesNaN];
         continue
     end
-    femalesM = [femalesM, cast(SDS.females.(this{1})(femaleIdx)', SDS.float)];
+    dims = size(SDS.females.(this{1})(femaleIdx));
+    if dims(1)<dims(2)
+        femalesM = [femalesM, cast(SDS.females.(this{1})(femaleIdx)', SDS.float)];
+    else
+        femalesM = [femalesM, cast(SDS.females.(this{1})(femaleIdx), SDS.float)];
+    end
 end
 
 allC = [
@@ -641,7 +651,7 @@ for i = 1:length(relations(:,1))
     end
     male = SDS.relations.ID(i,1);female = SDS.relations.ID(i,2);
     relations(i, 5) = SDS.males.born(male);
-    relations(i, 6) = SDS.males.born(female);
+    relations(i, 6) = SDS.females.born(female);
     malePos = SDS.males.HIV_positive(male)<relations(i,3);
     femalePos = SDS.females.HIV_positive(female)<relations(i,3);
     relations(i, 7) = ~(malePos&femalePos)|(~malePos&~femalePos);
@@ -696,9 +706,11 @@ transNet = [header
 
 
 % ******* Store *******
-folder = jproject('folder');
+% folder = jproject('folder');
+folder = '/Users/wimdelva/Documents/Simpact/wim/csvfiles';
+
 [~, file] = fileparts(SDS.data_file);
-[ok, msg] = spTools_exportCSV_print(fullfile(folder, [file, '.csv']), allC);
+[ok, msg] = spTools_exportCSV_print(fullfile(folder, [file, 'people.csv']), allC);
 [ok, msg] = spTools_exportCSV_print(fullfile(folder,[file,'relations.csv']),relations);
 [ok, msg] = spTools_exportCSV_print(fullfile(folder, [file, 'trans.csv']), transNet);
 %% exportCSV_print
