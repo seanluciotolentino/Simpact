@@ -788,12 +788,17 @@ end
 count = sum(SDS.relations.ID(:, SDS.index.male) ~= 0);
 maleAge = nan(1, count);
 femaleAge = nan(1, count);
+colourID = nan(1, count);
 
 for ii = 1 : count
     maleAge(ii) = SDS.relations.time(ii, SDS.index.start) - ...
         SDS.males.born(SDS.relations.ID(ii, SDS.index.male));
     femaleAge(ii) = SDS.relations.time(ii, SDS.index.start) - ...
         SDS.females.born(SDS.relations.ID(ii, SDS.index.female));
+
+    % testing colour coding for the ID of the men
+    colourID(ii) = SDS.relations.ID(ii, SDS.index.male);
+
 end
 
 figPrp.Name = 'Relations Formation Scatter';
@@ -801,7 +806,7 @@ figPrp.ToolBar = 'figure';
 hFig = fig(figPrp);
 hAxes = axes('Parent', hFig);
 
-hScat = scatter(hAxes, femaleAge, maleAge, 4, 'HitTest', 'off');
+hScat = scatter(hAxes, maleAge, femaleAge, 30, colourID, 'filled', 'HitTest', 'off');
 linePrp = [];
 linePrp.Color = 'r';
 linePrp.HitTest = 'off';
