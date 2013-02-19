@@ -269,14 +269,14 @@ end
         switch sex
             case 'males'
                 P0.aliveMales(ID) = true;
-                P0.maleAge(ID,:) = zeros(1,SDS.number_of_males);
-                P0.timeSinceLast(ID,:) = zeros(1,SDS.number_of_males);
+                P0.maleAge(ID,:) = zeros(1,SDS.number_of_females);
+                P0.timeSinceLast(ID,:) = -15*ones(1,SDS.number_of_males);
                 P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);
                 Pmort.index = ID;
             case 'females'
                 P0.aliveFemales(ID) = true;
-                P0.femaleAge(:,ID) = zeros(SDS.number_of_females,1);
-                P0.timeSinceLast(:,ID) = zeros(SDS.number_of_females,1);
+                P0.femaleAge(:,ID) = zeros(SDS.number_of_males,1);
+                P0.timeSinceLast(:,ID) = -15*ones(SDS.number_of_females,1);
                 P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);
                 Pmort.index = SDS.number_of_males + ID;
         end
