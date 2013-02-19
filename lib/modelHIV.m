@@ -140,7 +140,9 @@ end
         %}
            
         % ******* Partnering TEMP!!! *******
-        betaPars = [0.5, 0.5];
+        betaPars(1) = SDS.betaPars1;
+        betaPars(2) = SDS.betaPars2;
+
         partneringFcn = 'mean';
         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
@@ -161,6 +163,87 @@ end
                 P0.partnering = partMales.*pathFemales;
         end
         
+        % ******* Individual age mixing parameters *******
+        % individual age difference preference (optimum)
+        mu_individ_age = SDS.mu_individ_age;
+        sigma_individ_age = SDS.sigma_individ_age;
+        SDS.males.preferred_age_difference = cast(normrnd(mu_individ_age,sigma_individ_age,SDS.number_of_males,1), SDS.float);
+        SDS.females.preferred_age_difference = cast(normrnd(mu_individ_age,sigma_individ_age,SDS.number_of_females,1), SDS.float);
+        [P0.pref_age_diffMales, P0.pref_age_diffFemales] = ndgrid(SDS.males.preferred_age_difference, SDS.females.preferred_age_difference);
+        
+        % individual age difference factor
+        mean_age_diff_factor = SDS.mean_age_diff_factor;
+        range_age_diff_factor = SDS.range_age_diff_factor;
+        
+        ageDiffFactorFcn = SDS.interventions.AgeMixingChange.ageDiffFactorFcn;
+        SDS.males.ageDiffFactor = cast(malesOnes.*mean_age_diff_factor + (rand(1,SDS.number_of_males)-0.5)*range_age_diff_factor, SDS.float);
+        SDS.females.ageDiffFactor = cast(femalesOnes.*mean_age_diff_factor + (rand(1,SDS.number_of_females)-0.5)*range_age_diff_factor, SDS.float);
+        
+        [ageDiffFactMales, ageDiffFactFemales] = ndgrid(SDS.males.ageDiffFactor, SDS.females.ageDiffFactor);
+        agedifffield = str2field(eventFormation('name'));
+        if isfield(SDS, agedifffield)
+            ageDiffFactorFcn = SDS.(agedifffield).agediff_function.SelectedItem;
+        end
+        switch ageDiffFactorFcn
+            case 'min'
+                P0.agediff = min(ageDiffFactMales, ageDiffFactFemales);
+            case 'max'
+                P0.agediff = max(ageDiffFactMales, ageDiffFactFemales);
+            case 'mean'
+                P0.agediff = (ageDiffFactMales + ageDiffFactFemales)/2;
+            case 'product'
+                P0.agediff = -(ageDiffFactMales.*ageDiffFactFemales);
+        end
+        
+        % individual mean age growth factor
+        mu_mean_age_growth = SDS.mu_mean_age_growth;
+        sigma_mean_age_growth = SDS.sigma_mean_age_growth;
+        
+        meanAgeGrowthFactorFcn = SDS.interventions.AgeMixingChange.meanAgeGrowthFactorFcn;
+        
+        SDS.males.meanAgeGrowthFactor = cast(normrnd(mu_mean_age_growth,sigma_mean_age_growth,SDS.number_of_males,1), SDS.float);
+        SDS.females.meanAgeGrowthFactor = cast(normrnd(mu_mean_age_growth,sigma_mean_age_growth,SDS.number_of_females,1), SDS.float);
+        
+        [meanAgeGrowthFactMales, meanAgeGrowthFactFemales] = ndgrid(SDS.males.meanAgeGrowthFactor, SDS.females.meanAgeGrowthFactor);
+        meanAgeGrowthfield = str2field(eventFormation('name'));
+        if isfield(SDS, meanAgeGrowthfield)
+            meanAgeGrowthFactorFcn = SDS.(meanAgeGrowthfield).meanagegrowth_function.SelectedItem;
+        end
+        switch meanAgeGrowthFactorFcn
+            case 'min'
+                P0.meanagegrowth = min(meanAgeGrowthFactMales, meanAgeGrowthFactFemales);
+            case 'max'
+                P0.meanagegrowth = max(meanAgeGrowthFactMales, meanAgeGrowthFactFemales);
+            case 'mean'
+                P0.meanagegrowth = (meanAgeGrowthFactMales + meanAgeGrowthFactFemales)/2;
+            case 'product'
+                P0.meanagegrowth = meanAgeGrowthFactMales.*meanAgeGrowthFactFemales;
+        end
+        
+        % individual mean age dispersion growth factor
+        mu_mean_age_dispersion_growth = SDS.mu_mean_age_dispersion_growth;
+        sigma_mean_age_dispersion_growth = SDS.sigma_mean_age_dispersion_growth;
+        
+        meanAgeDispersionGrowthFactorFcn = SDS.interventions.AgeMixingChange.meanAgeDispersionGrowthFactorFcn;
+        
+        SDS.males.meanAgeDispersionGrowthFactor = cast(normrnd(mu_mean_age_dispersion_growth,sigma_mean_age_dispersion_growth,SDS.number_of_males,1), SDS.float);
+        SDS.females.meanAgeDispersionGrowthFactor = cast(normrnd(mu_mean_age_dispersion_growth,sigma_mean_age_dispersion_growth,SDS.number_of_females,1), SDS.float);
+        
+        [meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales] = ndgrid(SDS.males.meanAgeDispersionGrowthFactor, SDS.females.meanAgeDispersionGrowthFactor);
+        meanAgeDispersionGrowthfield = str2field(eventFormation('name'));
+        if isfield(SDS, meanAgeDispersionGrowthfield)
+            meanAgeDispersionGrowthFactorFcn = SDS.(meanAgeDispersionGrowthfield).meanagedispersiongrowth_function.SelectedItem;
+        end
+        switch meanAgeDispersionGrowthFactorFcn
+            case 'min'
+                P0.meanagedispersiongrowth = min(meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales);
+            case 'max'
+                P0.meanagedispersiongrowth = max(meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales);
+            case 'mean'
+                P0.meanagedispersiongrowth = (meanAgeDispersionGrowthFactMales + meanAgeDispersionGrowthFactFemales)/2;
+            case 'product'
+                P0.meanagedispersiongrowth = meanAgeDispersionGrowthFactMales.*meanAgeDispersionGrowthFactFemales;
+        end
         
         % ******* Aging TEMP!!! *******
         agesMale = empiricalage(SDS.initial_number_of_males);
@@ -540,6 +623,21 @@ SDS.females = mergeStruct(commonPrp, struct(...
 
 % ******* Relations *******
 SDS.relations = struct('ID', [], 'time', []);
+
+
+% ******* Partnering parameters ********
+SDS.betaPars1 = 0.5;
+SDS.betaPars2 = 0.5;
+
+% ******* Individual age mixing parameters ********
+SDS.mu_individ_age = 10;       % population average of preferred age difference
+SDS.sigma_individ_age = 1;    % variability around this population average;
+
+SDS.mean_age_diff_factor = 0; % the average age difference factor is -1;
+SDS.range_age_diff_factor = 0; % it ranges between mean_age_diff_factor +/- (1/2) range_age_diff_factor; 
+
+SDS.mu_mean_age_growth = 1; % the population average of the mean age growth factor;
+SDS.sigma_mean_age_growth = 0; % variability around this population average;
 
 
 % ******* Fetch Available Events *******
