@@ -368,7 +368,7 @@ props.test_time = {
 
 props.CD4_baseline_for_ARV = {
    'variables'                  'CD4 threshold' 'current time' 'current accessability' 'target time' 'target accessability' 
-    'population'                350                   '31-Dec-2012'             50              '30-Jun-2015'               50
+    'population'                350                   '31-Dec-2012'             80              '30-Jun-2032'               70
   %  'expansion group'      350                   '31-Dec-2012'             40              '30-Jun-2015'               40
     };
 props.option_B_coverage = 95;

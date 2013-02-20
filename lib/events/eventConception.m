@@ -170,7 +170,7 @@ end
 %% properties
 function [props, msg] = eventConception_properties
 
-props.fertility_rate_parameter = 0.145;
+props.fertility_rate_parameter = 0.15;
 props.fertility_change = 0.6;
 msg = 'Birth implemented by birth event.';
 end

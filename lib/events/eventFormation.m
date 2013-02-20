@@ -296,7 +296,7 @@ props.behavioural_change_factor = 0;    % The effect of relations becomes larger
 props.mean_age_factor = -log(5)/50; %-log(hazard ration)/(age2-age1);
 props.last_change_factor = log(1.3);         % NOTE: intHazard = Inf for d = -c !!!
 props.age_limit = 15;                 % no couple formation below this age
-props.age_difference_factor = -log(5)/5;
+props.age_difference_factor = -log(3)/5;
 props.preferred_age_difference = 4.5;
 props.community_difference_factor = 0;
 props.transaction_sex_factor = log(2);

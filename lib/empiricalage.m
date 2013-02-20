@@ -50,7 +50,7 @@ F=1-exp(-((Q9*(nthroot(-log(1), k)))^k));
 
 function answer = testje2(time,linf,kinf,ladu,kadu)  % time is a vector of the form time = [0:0.01:200];
 
-cutoff=5;
+cutoff=3;
 answer=[];
 for i=1:length(time),
     if time(i) <= cutoff,        % The density of dying in the first year;

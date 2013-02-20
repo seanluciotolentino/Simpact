@@ -563,7 +563,10 @@ SDS.relations = struct('ID', [], 'time', []);
 
 % ******* Fetch Available Events *******
 folder = [fileparts(which(mfilename)) '/events'];
+if ~isdeployed
 addpath(folder)
+end
+
 for thisFile = dir(fullfile(folder , 'event*.m'))'
     if strcmp(thisFile.name, 'eventTemplate.m')
         continue

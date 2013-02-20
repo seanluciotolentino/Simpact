@@ -84,6 +84,9 @@ end
         P.false = false(SDS.number_of_males, SDS.number_of_females);
         age0 = -[SDS.males.born, SDS.females.born];
         P.rand = rand(1, elements, SDS.float);
+        % temporary
+        P.scale(age0>=30) = P.scale(age0>=30) - 15;
+        P.scale(age0<30) = P.scale(age0<30)-0.5*age0(age0<30);
         P.eventTimes = inf(SDS.number_of_males, SDS.number_of_females, SDS.float);
         if ~P.enable
             return
@@ -242,10 +245,9 @@ end
         if ~P.enable
             return
         end        
+        
         t = P.weibullEventTime(...
             P.scale(P0.index), P.shape(P0.index), P.rand(P0.index), 0);
-        %t(P.rand(P0.index)<=0.02) = rand*5;
-        %P.eventTimes(P0.index) = P.weibull(P.scale(P0.index), P.shape(P0.index));
         P.eventTimes(P0.index) = t;
         
     end

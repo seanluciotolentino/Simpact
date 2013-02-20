@@ -440,7 +440,7 @@ props.CD4_distribution_at_infection = {
     };
 
 props.sexual_behaviour_parameters = {'baseline' 'mean age' 'age difference' 'relation type' 'relations count' 'serodiscordant' 'HIV disclosure' 'time'
-    2 0 0 0 0 0 0 log(0.95)};
+    3 0 0 0 0 0 0 log(0.88)};
 props.risk_behaviour_reduction = 0.025;
 
 end

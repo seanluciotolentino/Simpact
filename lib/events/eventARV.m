@@ -118,15 +118,15 @@ end
               CD4Death = SDS.males.CD4Death(P0.male);
               if P0.now<= SDS.males.CD4_500(P0.male)
                   [SDS.males.CD4_500(P0.male),SDS.males.CD4_350(P0.male),SDS.males.CD4_200(P0.male)]=...
-                  CD4interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
+                  CD4Interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
               else
                   if P0.now<= SDS.males.CD4_350(P0.male)
                       [~,SDS.males.CD4_350(P0.male),SDS.males.CD4_200(P0.male)]=...
-                  CD4interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
+                  CD4Interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
                   else
                       if P0.now<= SDS.males.CD4_200(P0.male)
                           [~,~,SDS.males.CD4_200(P0.male)]=...
-                  CD4interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
+                  CD4Interp(CD4Infection,CD4Death,SDS.males.AIDSdeath(P0.male),P0.now);
                       end
                   end                                                 
               end
@@ -163,15 +163,15 @@ end
               
               if P0.now<= SDS.females.CD4_500(P0.female)
                   [SDS.females.CD4_500(P0.female),SDS.females.CD4_350(P0.female),SDS.females.CD4_200(P0.female)]=...
-                  CD4interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
+                  CD4Interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
               else
                   if P0.now<= SDS.females.CD4_350(P0.female)
                       [~,SDS.females.CD4_350(P0.female),SDS.females.CD4_200(P0.female)]=...
-                  CD4interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
+                  CD4Interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
                   else
                       if P0.now<= SDS.females.CD4_200(P0.female)
                           [~,~,SDS.females.CD4_200(P0.female)]=...
-                  CD4interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
+                  CD4Interp(CD4Infection,CD4Death,SDS.females.AIDSdeath(P0.female),P0.now);
                       end
                   end                                                 
               end
@@ -225,7 +225,7 @@ end
 
 %% properties
 function [props, msg] = eventARV_properties
-props.ARV_program_start_time = 1;
+props.ARV_program_start_time = 2;
 props.lifetime_extension_by_ARV = {
 'scale factor' 'shape'
 2                  4
