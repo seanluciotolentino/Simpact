@@ -14,7 +14,7 @@ function structGui(Prefs)
 % * respond to table edit
 %
 %   Requires: JComponent, jproject, jset, struct2tree, treepath2struct,
-%   caller, backup, field2str, SwingX, isme.
+%   caller, backup, field2str, SwingX.
 
 % Copyright 2009-2011 by Hummeling Engineering (www.hummeling.com)
 
@@ -2263,7 +2263,7 @@ handles.frame.setVisible(true)
         %% preferences_defaults
         function Prefs = structGui_preferences_defaults
             
-            Prefs.debug = isme;
+            Prefs.debug = false;
             Prefs.dividerSize = 12;
             Prefs.expandTree = true;
             Prefs.font = 'Verdana';
