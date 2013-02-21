@@ -65,23 +65,14 @@ end
             event.infectiousness(2:end, 1:2)
             {varWeibull, ''}
             ];
-        debugState = false;
-        if isme
-            debugState = he('-debug');
-        end
-        if debugState
-            he('-debug')
-        end
-        tic
+
         for ii = 1 : infections
             P.algebraicSystem{4, 2} = sprintf('%g', P.timeDeath(ii));
             P.algebraicSystem = solvesys(P.algebraicSystem);
             P.t(:, ii) = [P.algebraicSystem{:, 3}]';
         end
-        %toc    % ~1/200 sec/infection
-        if debugState
-            he('-debug')
-        end
+
+
         
         % ******* Integrated Hazards for Entire Population *******
         %***********************************%
