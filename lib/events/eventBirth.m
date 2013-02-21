@@ -235,9 +235,9 @@ end
         end
         
         P0.meanAge = (P0.maleAge + P0.femaleAge)/2; % updating matrix of mean ages
-        P0.ageDifference = P0.maleAge - P0.femaleAge; % updating age difference
+%         P0.ageDifference = P0.maleAge - P0.femaleAge; % updating age difference
         P0.communityDifference = cast(P0.maleCommunity - P0.femaleCommunity, SDS.float); % updating community difference
-
+        P0.ageDifference = P0.maleAge - P0.femaleAge;
         Pform.index = find(P0.subset);
         P.enableMortality(Pmort)            % uses P0.index
         
