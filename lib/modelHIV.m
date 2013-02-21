@@ -906,7 +906,8 @@ try
             
         case 'To MATLAB Workspace'
             handles.msg('Assigning data structure to MATLAB workspace...')
-            base(SDS)
+            load(SDS)
+            %base(SDS) %base function has been deprecated and moved to archive
             handles.msg(' ok\n')
             
         otherwise
