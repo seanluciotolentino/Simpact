@@ -203,11 +203,14 @@ end
                 %P0.alive(ID, :) = true;
                 P0.aliveMales(ID) = true;
                 P0.maleAge(ID,:) = zeros(1,SDS.number_of_females);
-                P0.timeSinceLast(ID, :) = -15*ones(1,SDS.number_of_females);
+                P0.timeSinceLast(ID, :) = -15*ones(1,SDS.number_of_females); % So that it's zero when he is 15
                 %P0.malecommID = repmat(SDS.males.commID(:), 1, SDS.number_of_females);
                 P0.maleCommunity(ID, :) = SDS.males.community(ID);
-                P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);
-                P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);
+%               P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females); % UNUSED?
+%               P0.malecurrent_relations_factor =
+%               repmat(SDS.males.current_relations_factor(:), 1,
+%               SDS.number_of_females); % Already created for entire
+%               population by modelHIV
                 
                 Pmort.index = ID;
                 
@@ -219,17 +222,22 @@ end
                 %P0.alive(:, ID) = true;
                 P0.aliveFemales(ID) = true;
                 P0.femaleAge(:,ID) = zeros(SDS.number_of_males,1);
-                P0.timeSinceLast(:,ID) = -15*ones(SDS.number_of_males,1);
+                P0.timeSinceLast(:,ID) = -15*ones(SDS.number_of_males,1); % So that it's zero when she is 15 
                 %P0.femalecommID = repmat(SDS.females.commID(:)', SDS.number_of_males, 1);
                 P0.femaleCommunity(:, ID) = SDS.females.community(ID);
-                P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);
-                P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);
+%               P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1); % UNUSED?
+%               P0.femalecurrent_relations_factor =
+%               repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1); % Already created for entire
+%               population by modelHIV
                 
                 P0.subset(:, ID) = true;
                 Pmort.index = SDS.number_of_males + ID;
         end
         
-        
+        P0.meanAge = (P0.maleAge + P0.femaleAge)/2; % updating matrix of mean ages
+        P0.ageDifference = P0.maleAge - P0.femaleAge; % updating age difference
+        P0.communityDifference = cast(P0.maleCommunity - P0.femaleCommunity, SDS.float); % updating community difference
+
         Pform.index = find(P0.subset);
         P.enableMortality(Pmort)            % uses P0.index
         
