@@ -78,11 +78,11 @@ end
         P.alpha = -inf(SDS.number_of_males, SDS.number_of_females, 3, SDS.float);
         false3D = false(size(P.alpha));
         P.subset = false3D;         % memory allocation
-        P.subset2 = false3D;        % memory allocation
-        P.subset3 = false3D;        % memory allocation
+%         P.subset2 = false3D;        % memory allocation
+%         P.subset3 = false3D;        % memory allocation
         
         P.beta = P.mean_age_factor + P.last_change_factor;
-        P.beta2 = P.beta*ones(SDS.number_of_males, SDS.number_of_females, SDS.float);
+%         P.beta2 = P.beta*ones(SDS.number_of_males, SDS.number_of_females, SDS.float);
         P.rand = P.rand0toInf(SDS.number_of_males, SDS.number_of_females);
         P.time0 = zeros(SDS.number_of_males, SDS.number_of_females, SDS.float);
         P.eventTimes = inf(SDS.number_of_males, SDS.number_of_females, SDS.float);
@@ -361,8 +361,8 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     P0.subset(~P0.aliveMales, :) = false;
     P0.subset(:, ~P0.aliveFemales) = false;
     P.subset = repmat(P0.subset, [1 1 3]);  % 3D logical index matrix
-    P.subset2(:, :, 2) = P0.subset; % alpha2 3D index matrix
-    P.subset3(:, :, 3) = P0.subset; % alpha3 3D index matrix
+%     P.subset2(:, :, 2) = P0.subset; % alpha2 3D index matrix
+%     P.subset3(:, :, 3) = P0.subset; % alpha3 3D index matrix
 
 
     % ******* Age Limit *******
@@ -417,7 +417,7 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     % Updating cumulative hazards
     
 %     P.rand(P0.subset(:)) = P.rand(P0.subset(:)) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
-    P.rand(:) = P.rand(:) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
+    P.rand(P0.subset) = P.rand(P0.subset) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
 
 end
 
