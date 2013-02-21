@@ -52,12 +52,8 @@ jproject_update
         jproject_setPath(projectFolder)
         jproject_dialog_open_archive
 
-        if all([exist('isme', 'file'), exist('debugMsg', 'file')] == 2)
-            if isme
-                debugMsg -on
-            else
-                debugMsg -off
-            end
+        if exist('debugMsg', 'file')
+            debugMsg -on
         end
 
         Prefs.lastProject = projectFolder;
@@ -140,12 +136,8 @@ jproject_update
             jproject_setPath(projectFolder)
             jproject_dialog_open_archive
             
-            if all([exist('isme', 'file'), exist('debugMsg', 'file')] == 2)
-                if isme
-                    debugMsg -on
-                else
-                    debugMsg -off
-                end
+            if exist('debugMsg', 'file')
+                debugMsg -on
             end
             
             Prefs.lastProject = projectFolder;
