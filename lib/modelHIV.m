@@ -120,8 +120,8 @@ end
         SDS.males.BCC_exposure(maleRange) = BCCexposureMale;
         SDS.females.BCC_exposure(femaleRange) = BCCexposureFemale;
         %}
-        SDS.males.BCC_exposure(maleRange) = 1;
-        SDS.females.BCC_exposure(femaleRange) = 1;
+%         SDS.males.BCC_exposure(maleRange) = 1;  UNUSED?
+%         SDS.females.BCC_exposure(femaleRange) = 1; UNUSED?
         % ******* BCC Current Relations Factor ********
         %Using Discrete Value for 2 communities
         %LUCIO -- in changing to SDS.events I had to change this, though
@@ -346,8 +346,8 @@ end
         P0.femaleCommunity = repmat(SDS.females.community(:)', SDS.number_of_males, 1);
         
         
-        P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);%
-        P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);%
+        % P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females); % UNUSED?
+        % P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1); % UNUSED?
 
         P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);%
         P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);%
@@ -360,9 +360,9 @@ end
         
         %%%%%%%
         P0.communityDifference = cast(P0.maleCommunity - P0.femaleCommunity, SDS.float);
-        P0.BCCexposureMax = max(P0.maleBCCexposure,P0.femaleBCCexposure);%
-        P0.BCCexposureMin = min(P0.maleBCCexposure,P0.femaleBCCexposure);%
-        P0.BCCexposureMean = (P0.maleBCCexposure+P0.femaleBCCexposure)./2;%
+%         P0.BCCexposureMax = max(P0.maleBCCexposure,P0.femaleBCCexposure);%
+%         P0.BCCexposureMin = min(P0.maleBCCexposure,P0.femaleBCCexposure);%
+%         P0.BCCexposureMean = (P0.maleBCCexposure+P0.femaleBCCexposure)./2;%
         
         P0.current_relations_factorMax = max(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
         P0.current_relations_factorMin = min(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
