@@ -14,7 +14,7 @@ table.newborns_per_yr = sum([SDS.males.born, SDS.females.born]>=0)/t;
 timeHIVpos = [SDS.males.HIV_positive, SDS.females.HIV_positive];
 sortHIVpos = sort(timeHIVpos(~isnan(timeHIVpos)));
 
-initialHIV = sum(sortHIVpos<=0);
+initialHIV = max(1,sum(sortHIVpos<=0));
 table.newHIV = length(sortHIVpos) - initialHIV;
 if initialHIV*2<=length(sortHIVpos)
 table.doubleTime = sortHIVpos(initialHIV*2);
