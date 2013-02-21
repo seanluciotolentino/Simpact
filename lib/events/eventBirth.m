@@ -19,12 +19,6 @@ switch fcn
 end
 [varargout{1:nargout}] = eval(cmd);
 
-        % ******* Function Handles *******
-        empiricalExposure = spTools('handle', 'empiricalExposure');
-        empiricalCommunity = spTools('handle', 'empiricalCommunity');
-        empiricalCRF = spTools('handle', 'empiricalCRF');  
-
-
 %% init
     function [elements, msg] = eventBirth_init(SDS, event)
         
