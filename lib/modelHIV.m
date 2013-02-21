@@ -33,7 +33,7 @@ end
         
         msg = '';
         
-        %spTools('resetRand')	% reset random number generator
+        spTools('resetRand')	% reset random number generator
         
         % ******* Function Handles *******
         %empiricalExposure = spTools('handle', 'empiricalExposure');

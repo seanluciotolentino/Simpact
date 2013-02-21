@@ -237,8 +237,8 @@ end
 %         end
         
         % ******* Shift Event Times *******
-        P.eventTimes = P.eventTimes - P0.eventTime;
-   
+        %P.eventTimes = P.eventTimes - P0.eventTime;
+        return
     end
 
 
@@ -370,7 +370,7 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     boy(boy < 0) = 0;
     girl = P.age_limit - P0.femaleAge;
     girl(girl < 0) = 0;
-    P.time0 = max(boy, girl);
+    P.time0 = max(boy, girl); %time you need before you can become sexually active
 
     t0 = P.time0(P0.subset);    
     
@@ -390,22 +390,22 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     
            % Adjusting alpha to ensure constant population average partner
     % turnover rate, equal to PTR
-    A = exp(alpha);
-    CFH = sum(exp(alpha));
-    Alives = sum(P0.aliveMales)+sum(P0.aliveFemales);
-    PTR = 1;
-    % cumulative formation hazard (CFH) = exp(A)
-    % A = log(CFH)
-    % 1/CFH = average duration till relationship / Alives
-    % 1/CFH = (1/PTR) / Alives
-    % CFH = Alives * PTR
-    CFHtarget = (Alives/2) * PTR;
-    % Atarget = log(Alives*PTR);
-    CFHcorrectionfactor = CFHtarget/CFH;
-    % A = A*Acorrectionfactor;
-    % CFH = CFH*CFHcorrectionfactor;
-    A = A * CFHcorrectionfactor;
-    alpha = log(A); 
+%     A = exp(alpha);
+%     CFH = sum(exp(alpha));
+%     Alives = sum(P0.aliveMales)+sum(P0.aliveFemales);
+%     PTR = 1;
+%     % cumulative formation hazard (CFH) = exp(A)
+%     % A = log(CFH)
+%     % 1/CFH = average duration till relationship / Alives
+%     % 1/CFH = (1/PTR) / Alives
+%     % CFH = Alives * PTR
+%     CFHtarget = (Alives/2) * PTR;
+%     % Atarget = log(Alives*PTR);
+%     CFHcorrectionfactor = CFHtarget/CFH;
+%     % A = A*Acorrectionfactor;
+%     % CFH = CFH*CFHcorrectionfactor;
+%     A = A * CFHcorrectionfactor;
+%     alpha = log(A); 
     
     Pt = P.rand(P0.subset);
 
@@ -417,7 +417,7 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     % Updating cumulative hazards
     
 %     P.rand(P0.subset(:)) = P.rand(P0.subset(:)) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
-    P.rand(P0.subset) = P.rand(P0.subset) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
+    P.rand(P0.subset) = P.rand(P0.subset) - max( P.intExpLinear(alpha, P.beta, t0, P0.eventTime), 0 );
 
 end
 
