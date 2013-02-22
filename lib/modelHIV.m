@@ -463,13 +463,22 @@ end
         
  
         
-        if P0.eventTime <= 0
+        if P0.eventTime == 0 % This may happen for HIV introduction
+%             problem = find(P0.cumsum >= firstIdx, 1) - 1
+%             time = P0.eventTime
+            %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
+            P0.eventTime = 0;
+            %keyboard
+        end
+        
+        if P0.eventTime < 0
 %             problem = find(P0.cumsum >= firstIdx, 1) - 1
 %             time = P0.eventTime
             %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
             P0.eventTime = 0.0001;
             %keyboard
         end
+        
         if ~isfinite(P0.eventTime)
             t = Inf;
             return
@@ -480,13 +489,16 @@ end
         % ******* 3: Update Time *******
         %SDS.now(end + 1, 1) = SDS.now(end) + P0.eventTime;
         P0.now = P0.now + P0.eventTime;
-        P0.maleAge = P0.maleAge + P0.eventTime;
-        P0.femaleAge = P0.femaleAge + P0.eventTime;
-        %P0.meanAge = P0.meanAge + P0.eventTime;
-        P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
-        P0.ageDifference = P0.maleAge - P0.femaleAge;
+%         P0.maleAge = P0.maleAge + P0.eventTime;
+%         P0.femaleAge = P0.femaleAge + P0.eventTime;
+%         %P0.meanAge = P0.meanAge + P0.eventTime;
+%         P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
+% %         P0.ageDifference = P0.maleAge - P0.femaleAge; % moved to birth
+% %         event
+%         
+%         P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
         
-        P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
+        
         % P0.riskyBehaviour =  P0.meanAge + P0.ageDifference + P0.relationCount + P0.relationsTerm + P0.serodiscordant;        
         %{
         P0.meanAgeSex 
@@ -501,10 +513,21 @@ end
         P0.subset(~P0.aliveMales, :) = false;
         P0.subset(:, ~P0.aliveFemales) = false;   
         
-        % ******* 4: Advance All Events *******
+        % ******* 4A: Advance All Events *******
         for ii = 1 : P0.numberOfEvents
             P0.event(ii).advance(P0)
         end
+        
+        % ******* 4B: Update timedependent variables ********
+        P0.maleAge = P0.maleAge + P0.eventTime;
+        P0.femaleAge = P0.femaleAge + P0.eventTime;
+        %P0.meanAge = P0.meanAge + P0.eventTime;
+        P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
+%         P0.ageDifference = P0.maleAge - P0.femaleAge; % moved to birth
+%         event
+        
+        P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
+
         
         
         % ******* 5: Fire First Event *******
