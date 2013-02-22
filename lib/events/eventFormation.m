@@ -227,6 +227,11 @@ end
 %             
 %         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %         % P - dT
+        t0 = min(P0.eventTime(:), P.time0(P0.subset)); % time until you start consuming cumulative hazard
+
+        P.rand(P0.subset) = P.rand(P0.subset) - P.intExpLinear(P.alpha, P.beta, t0, P0.eventTime);
+
+
 %         P.rand(P0.subset) = P.rand(P0.subset) - h;
 %         
 %         %P.rand = P.rand - P.intExpLinear(alpha, beta, t0, P0.eventTime);
@@ -372,9 +377,9 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     girl(girl < 0) = 0;
     P.time0 = max(boy, girl); %time you need before you can become sexually active
 
-    t0 = P.time0(P0.subset);    
+    t0 = P.time0(P0.subset);
     
-        alpha = P.baseline_factor*P0.partnering(P0.subset) + ...
+        P.alpha = P.baseline_factor*P0.partnering(P0.subset) + ...
         P.current_relations_factor*P0.relationCount(P0.subset) + ...
         P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
         P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ... 
@@ -388,28 +393,36 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
         P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
         P.community_difference_factor*abs(P0.communityDifference(P0.subset));    
     
+    
+%     test=reshape(P.alpha,10,10);
+%     test2=test(:);
+%     q=(test2==P.alpha);
+    
            % Adjusting alpha to ensure constant population average partner
     % turnover rate, equal to PTR
-%     A = exp(alpha);
-%     CFH = sum(exp(alpha));
-%     Alives = sum(P0.aliveMales)+sum(P0.aliveFemales);
-%     PTR = 1;
-%     % cumulative formation hazard (CFH) = exp(A)
-%     % A = log(CFH)
-%     % 1/CFH = average duration till relationship / Alives
-%     % 1/CFH = (1/PTR) / Alives
-%     % CFH = Alives * PTR
-%     CFHtarget = (Alives/2) * PTR;
-%     % Atarget = log(Alives*PTR);
-%     CFHcorrectionfactor = CFHtarget/CFH;
-%     % A = A*Acorrectionfactor;
-%     % CFH = CFH*CFHcorrectionfactor;
-%     A = A * CFHcorrectionfactor;
-%     alpha = log(A); 
+
+    A = exp(P.alpha);
+    CFH = sum(exp(P.alpha));
+    ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
+    ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
+    Actives = sum(ActiveMales)+sum(ActiveFemales);
+    PTR = 20;
+    % cumulative formation hazard (CFH) = exp(A)
+    % A = log(CFH)
+    % 1/CFH = average duration till relationship / Actives
+    % 1/CFH = (1/PTR) / Actives
+    % CFH = Actives * PTR
+    CFHtarget = (Actives/2) * PTR;
+    % Atarget = log(Actives*PTR);
+    CFHcorrectionfactor = CFHtarget/CFH;
+    % A = A*Acorrectionfactor;
+    % CFH = CFH*CFHcorrectionfactor;
+    A = A * CFHcorrectionfactor;
+    P.alpha = log(A); 
     
     Pt = P.rand(P0.subset);
 
-    t = P.expLinear(alpha, P.beta, t0, Pt); %Returns time till event given cum. haz + t0 for P0.subset
+    t = P.expLinear(P.alpha, P.beta, t0, Pt); %Returns time till event given cum. haz + t0 for P0.subset
     
     eventTimes = P.eventTimes;
     eventTimes(P0.subset) = t; %grab the event times for the subset we want
@@ -417,8 +430,11 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
     % Updating cumulative hazards
     
 %     P.rand(P0.subset(:)) = P.rand(P0.subset(:)) - P.intExpLinear(alpha, P.beta, t0, P0.eventTime);
-    P.rand(P0.subset) = P.rand(P0.subset) - max( P.intExpLinear(alpha, P.beta, t0, P0.eventTime), 0 );
 
+% needs to be moved to update    P.rand(P0.subset) = P.rand(P0.subset) - max(P.intExpLinear(alpha, P.beta, t0, P0.eventTime), 0);
+
+    
+    
 end
 
 end
@@ -439,14 +455,14 @@ msg = '';
 
 %props.campaign_start_date = datestr('01-Jan-2050');
 props.baseline_factor = log(0.05); %log(40/200);
-props.current_relations_factor = log(0.1);
+props.current_relations_factor = -4;
 props.current_relations_difference_factor = 0; %log(0.5);
 props.individual_behavioural_factor = 0;
 %props.behavioural_change_factor = 0;    % The effect of relations becomes larger during BCC;
 props.mean_age_factor = 0; %-log(5)/40; %-log(hazard ration)/(age2-age1);
 props.last_change_factor = 0; %log(1.005);         % NOTE: intHazard = Inf for d = -c !!!
 props.age_limit = 15;                 % no couple formation below this age
-props.age_difference_factor = -0.4; %-log(5)/40;
+props.age_difference_factor = -2; %-log(5)/40;
 props.preferred_age_difference = 0; %4.5;
 props.mean_age_growth = 0; %how preferred age difference grows with mean age
 props.dispersion_base = 1; %baseline dispersion for a couple of average age = age limit
