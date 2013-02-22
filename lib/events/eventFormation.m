@@ -401,24 +401,24 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
            % Adjusting alpha to ensure constant population average partner
     % turnover rate, equal to PTR
 
-    A = exp(P.alpha);
-    CFH = sum(exp(P.alpha));
-    ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
-    ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
-    Actives = sum(ActiveMales)+sum(ActiveFemales);
-    PTR = 20;
-    % cumulative formation hazard (CFH) = exp(A)
-    % A = log(CFH)
-    % 1/CFH = average duration till relationship / Actives
-    % 1/CFH = (1/PTR) / Actives
-    % CFH = Actives * PTR
-    CFHtarget = (Actives/2) * PTR;
-    % Atarget = log(Actives*PTR);
-    CFHcorrectionfactor = CFHtarget/CFH;
-    % A = A*Acorrectionfactor;
-    % CFH = CFH*CFHcorrectionfactor;
-    A = A * CFHcorrectionfactor;
-    P.alpha = log(A); 
+%     A = exp(P.alpha);
+%     CFH = sum(exp(P.alpha));
+%     ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
+%     ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
+%     Actives = sum(ActiveMales)+sum(ActiveFemales);
+%     PTR = 20;
+%     % cumulative formation hazard (CFH) = exp(A)
+%     % A = log(CFH)
+%     % 1/CFH = average duration till relationship / Actives
+%     % 1/CFH = (1/PTR) / Actives
+%     % CFH = Actives * PTR
+%     CFHtarget = (Actives/2) * PTR;
+%     % Atarget = log(Actives*PTR);
+%     CFHcorrectionfactor = CFHtarget/CFH;
+%     % A = A*Acorrectionfactor;
+%     % CFH = CFH*CFHcorrectionfactor;
+%     A = A * CFHcorrectionfactor;
+%     P.alpha = log(A); 
     
     Pt = P.rand(P0.subset);
 
