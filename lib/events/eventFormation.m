@@ -394,31 +394,34 @@ function eventTimes = eventFormation_defaultHazard(SDS, P0)
         P.community_difference_factor*abs(P0.communityDifference(P0.subset));    
     
     
-%     test=reshape(P.alpha,10,10);
-%     test2=test(:);
-%     q=(test2==P.alpha);
-    
-           % Adjusting alpha to ensure constant population average partner
+AliveAlphaMatrix = reshape(P.alpha, sum(P0.aliveMales), sum(P0.aliveFemales));
+ActiveSubset = reshape(P.time0(P0.subset), sum(P0.aliveMales), sum(P0.aliveFemales)) ==0;
+ActiveAlpha = AliveAlphaMatrix(ActiveSubset);
+
+
+    % Adjusting alpha to ensure constant population average partner
     % turnover rate, equal to PTR
 
-%     A = exp(P.alpha);
-%     CFH = sum(exp(P.alpha));
-%     ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
-%     ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
-%     Actives = sum(ActiveMales)+sum(ActiveFemales);
-%     PTR = 20;
-%     % cumulative formation hazard (CFH) = exp(A)
-%     % A = log(CFH)
-%     % 1/CFH = average duration till relationship / Actives
-%     % 1/CFH = (1/PTR) / Actives
-%     % CFH = Actives * PTR
-%     CFHtarget = (Actives/2) * PTR;
-%     % Atarget = log(Actives*PTR);
-%     CFHcorrectionfactor = CFHtarget/CFH;
-%     % A = A*Acorrectionfactor;
-%     % CFH = CFH*CFHcorrectionfactor;
-%     A = A * CFHcorrectionfactor;
-%     P.alpha = log(A); 
+    A = exp(ActiveAlpha);
+    CFH = sum(exp(ActiveAlpha));
+    ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
+    ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
+    Actives = sum(ActiveMales)+sum(ActiveFemales);
+    PTR = 1;
+    % cumulative formation hazard (CFH) = exp(A)
+    % A = log(CFH)
+    % 1/CFH = average duration till relationship / Actives
+    % 1/CFH = (1/PTR) / Actives
+    % CFH = Actives * PTR
+    CFHtarget = (Actives/2) * PTR;
+    % Atarget = log(Actives*PTR);
+    CFHcorrectionfactor = CFHtarget/CFH;
+    % A = A*Acorrectionfactor;
+    % CFH = CFH*CFHcorrectionfactor;
+    A = A * CFHcorrectionfactor;
+    ActiveAlpha = log(A);
+    
+    P.alpha(ActiveSubset(:)) = ActiveAlpha;
     
     Pt = P.rand(P0.subset);
 
