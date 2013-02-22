@@ -29,9 +29,7 @@ end
         msg = '';
         
         P = event;                      % copy event parameters
-        if ~P.enable
-            return
-        end
+
         
         % ******* Function Handles *******
         P.rand0toInf = spTools('handle', 'rand0toInf');

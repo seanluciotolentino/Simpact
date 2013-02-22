@@ -307,7 +307,8 @@ end
         P0.numberOfEvents = 0;
         P0.elements = [];
         P0.event = struct('eventTime', {}, 'fire', {}, 'advance', {}, 'time', {}, 'get', {},'restore',{},'P',{});
-        modelHIV_preprocess_trace('SDS')    % ********
+        modelHIV_preprocess_trace(SDS.events,'events')    % Grab all the events
+        modelHIV_preprocess_trace(SDS.interventions,'interventions')    % Grab all the events
         P0.eventTime = 0; %[];
         P0.eventTimes = inf(1, sum(P0.elements));
         P0.cumsum = [0, cumsum(P0.elements)];
@@ -327,15 +328,9 @@ end
         
         
         %% preprocess_trace
-        function modelHIV_preprocess_trace(Schar)
-            
-            subS = eval(Schar);
-            
-            
-            % ******* Initialise Events *******
-            if isstruct(subS) && isfield(subS, 'object_type') && ...
-                    strcmp(subS.object_type, 'event')% && subS.enable
-                
+        function modelHIV_preprocess_trace(events,list)
+            for thisField = fieldnames(events)'
+                subS = SDS.(list).(thisField{1});
                 if exist(subS.event_file, 'file') ~= 2
                     msg = sprintf('%sError: can''t find %s\n', msg, subS.event_file);
                     return
@@ -345,6 +340,7 @@ end
                 if ~isempty(initMsg)
                     msg = sprintf('%s%s\n', msg, initMsg);
                 end
+
                 P0.event(P0.numberOfEvents).index = (1 : elements) + sum(P0.elements);
                 P0.elements(P0.numberOfEvents) = elements;
                 
@@ -353,15 +349,40 @@ end
                 P0.event(P0.numberOfEvents).advance = feval(subS.event_file, 'handle', 'advance');
                 P0.event(P0.numberOfEvents).fire = feval(subS.event_file, 'handle', 'fire');
             end
-            
-            for thisField = fieldnames(subS)'
-                if ~isstruct(subS.(thisField{1}))
-                    continue
-                end
-                
-                % recurrence
-                modelHIV_preprocess_trace([Schar, '.', thisField{1}])
-            end
+%             
+%             subS = eval(Schar);
+%             
+%             
+%             % ******* Initialise Events *******
+%             if isstruct(subS) && isfield(subS, 'object_type') && ...
+%                     strcmp(subS.object_type, 'event')% && subS.enable
+%                 
+%                 if exist(subS.event_file, 'file') ~= 2
+%                     msg = sprintf('%sError: can''t find %s\n', msg, subS.event_file);
+%                     return
+%                 end
+%                 P0.numberOfEvents = P0.numberOfEvents + 1;
+%                 [elements, initMsg] = feval(subS.event_file, 'init', SDS, subS);
+%                 if ~isempty(initMsg)
+%                     msg = sprintf('%s%s\n', msg, initMsg);
+%                 end
+%                 P0.event(P0.numberOfEvents).index = (1 : elements) + sum(P0.elements);
+%                 P0.elements(P0.numberOfEvents) = elements;
+%                 
+%                 % ******* Function Handles for Calculation Performance *******
+%                 P0.event(P0.numberOfEvents).eventTimes = feval(subS.event_file, 'handle', 'eventTimes');
+%                 P0.event(P0.numberOfEvents).advance = feval(subS.event_file, 'handle', 'advance');
+%                 P0.event(P0.numberOfEvents).fire = feval(subS.event_file, 'handle', 'fire');
+%             end
+%             
+%             for thisField = fieldnames(subS)'
+%                 if ~isstruct(subS.(thisField{1}))
+%                     continue
+%                 end
+%                 
+%                 % recurrence
+%                 modelHIV_preprocess_trace([Schar, '.', thisField{1}])
+%             end
         end
     end
 
