@@ -847,8 +847,8 @@ set(hAxes, 'ButtonDownFcn', @spGraphs_formationScatter_callback, ...
     'DataAspectRatio', [1 1 1], ...
     'XGrid', 'on', 'YGrid', 'on', 'XLim', lim, 'YLim', lim)
 title(hAxes, 'Click on a data point to see its properties')
-xlabel(hAxes, 'female age')
-ylabel(hAxes, 'male age ')
+xlabel(hAxes, 'male age')
+ylabel(hAxes, 'female age ')
 
 %zoom(hFig, 'on')
 
