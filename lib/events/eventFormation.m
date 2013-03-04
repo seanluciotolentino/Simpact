@@ -407,7 +407,7 @@ ActiveAlpha = AliveAlphaMatrix(ActiveSubset);
     ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
     ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
     Actives = sum(ActiveMales)+sum(ActiveFemales);
-    PTR = 1;
+    PTR = 0.6;
     % cumulative formation hazard (CFH) = exp(A)
     % A = log(CFH)
     % 1/CFH = average duration till relationship / Actives
