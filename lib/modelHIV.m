@@ -35,50 +35,32 @@ end
         
         spTools('resetRand')	% reset random number generator
         
-        % ******* Function Handles *******
-        %empiricalExposure = spTools('handle', 'empiricalExposure');
-        %empiricalCommunity = spTools('handle', 'empiricalCommunity');
-        empiricalCRF = spTools('handle', 'empiricalCRF');
-        
-        %NIU populationCount = SDS.number_of_males + SDS.number_of_females;
+        %  ******* Default Data Structs *******
         malesInt = zeros(1, SDS.number_of_males, SDS.integer);
         femalesInt = zeros(1, SDS.number_of_females, SDS.integer);
         malesZeros = zeros(1, SDS.number_of_males, SDS.float);
         femalesZeros = zeros(1, SDS.number_of_females, SDS.float);
         malesOnes = ones(1, SDS.number_of_males, SDS.float);
         femalesOnes = ones(1, SDS.number_of_females, SDS.float);
-        %NIU femalesZeros = zeros(1, SDS.number_of_females, SDS.float);
         malesNaN = nan(1, SDS.number_of_males, SDS.float);
         femalesNaN = nan(1, SDS.number_of_females, SDS.float);
         malesFalse = false(1, SDS.number_of_males);     % boolean/uint8 = 8 bit
-        %malesFalse = zeros(1, SDS.number_of_males, 'uint8');
         femalesFalse = false(1, SDS.number_of_females);
         falseMatrix = false(SDS.number_of_males, SDS.number_of_females);
-        
         P0.now = 0;
-        
-        
+                
         % ******* Influence Subset *******
         P0.true = true(SDS.number_of_males, SDS.number_of_females);
-        %maleRange = ones(1, SDS.integer) : SDS.number_of_males;
-        %femaleRange = ones(1, SDS.integer) : SDS.number_of_females;
-        %P0.subset = true(SDS.number_of_males, SDS.number_of_females);
         maleRange = 1 : SDS.initial_number_of_males;
         femaleRange = 1 : SDS.initial_number_of_females;
         P0.subset = falseMatrix;
         P0.subset(maleRange, femaleRange) = true;
-        %P0.alive = true(1, populationCount);     % WIP
-        %P0.alive = P0.subset;       % initially alive population
-        %P0.aliveRange = false(1, populationCount);
-        %P0.aliveRange(1 : populationCount) = true;
         P0.aliveMales = malesFalse;
         P0.aliveMales(maleRange) = true;
         P0.aliveFemales = femalesFalse;
         P0.aliveFemales(femaleRange) = true;
         P0.pregnant = femalesFalse;
-        
-       %P0.ANCtest = false; % false for general type testing, true for test at ANC
-        
+               
         % ******* Population *******
         SDS.males.father = malesInt;
         SDS.females.father = femalesInt;
@@ -96,11 +78,8 @@ end
         SDS.females.BCC_exposure = femalesNaN;
         SDS.males.current_relations_factor = malesNaN;
         SDS.females.current_relations_factor = femalesNaN;
-
-        
                 
         % ******* Communities TEMP!!! *******
-        
         communityMale = empiricalCommunity(SDS.initial_number_of_males, SDS.number_of_community_members);
         communityFemale = empiricalCommunity(SDS.initial_number_of_females, SDS.number_of_community_members);
         SDS.males.community(maleRange) = cast(communityMale, SDS.integer);
@@ -308,7 +287,7 @@ end
         P0.elements = [];
         P0.event = struct('eventTime', {}, 'fire', {}, 'advance', {}, 'time', {}, 'get', {},'restore',{},'P',{});
         modelHIV_preprocess_trace(SDS.events,'events')    % Grab all the events
-        modelHIV_preprocess_trace(SDS.interventions,'interventions')    % Grab all the events
+        modelHIV_preprocess_trace(SDS.interventions,'interventions')    % Grab all the interventions
         P0.eventTime = 0; %[];
         P0.eventTimes = inf(1, sum(P0.elements));
         P0.cumsum = [0, cumsum(P0.elements)];
@@ -398,20 +377,18 @@ end
         
         % ******* 2: Find First Event & Its Entry *******
         [P0.eventTime, firstIdx] = min(P0.eventTimes);  % index into event times
-        
-        %if events happened at very similar time, this may occur
-        if P0.eventTime <= 0
+                
+        if P0.eventTime <= 0 %if events happened at very similar time, this may occur
            P0.eventTime = 0.0001;
         end
-        
-        %if no other events are going to occur
-        if ~isfinite(P0.eventTime)
+                
+        if ~isfinite(P0.eventTime)%if no other events are going to occur
             t = Inf;
             return
         end
         
-        eventIdx = find(P0.cumsum >= firstIdx, 1) - 1;  % index of event
-        P0.index = firstIdx - P0.cumsum(eventIdx);      % index into event
+        eventIdx = find(P0.cumsum >= firstIdx, 1) - 1;  % index OF event (formation, mortality, etc...)
+        P0.index = firstIdx - P0.cumsum(eventIdx);      % index INTO event (formation between i and j, mortality of k, ect...)
         
         % ******* 3: Update Time *******
         P0.now = P0.now + P0.eventTime;
