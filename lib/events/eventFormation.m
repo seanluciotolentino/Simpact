@@ -403,7 +403,7 @@ ActiveAlpha = AliveAlphaMatrix(ActiveSubset);
     % turnover rate, equal to PTR
 
     A = exp(ActiveAlpha);
-    CFH = sum(exp(ActiveAlpha));
+    CFH = sum(exp(ActiveAlpha));  % cumulative formation hazard
     ActiveMales = P0.aliveMales' & P.age_limit - P0.maleAge(:,1)<=0;
     ActiveFemales = P0.aliveFemales & P.age_limit - P0.femaleAge(1,:)<=0;
     Actives = sum(ActiveMales)+sum(ActiveFemales);
