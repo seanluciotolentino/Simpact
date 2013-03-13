@@ -135,8 +135,9 @@ end
         % ******* Prepare Next *******
         P.blockConception(P0)
         P.blockTransmission(SDS, P0)
-        P0.subset(P0.male, P0.male) = true;
-        P0 = P.enableFormation(P0);
+        P0.subset(P0.male, P0.female) = true;
+        P0.current(P0.male, P0.female) = false;
+        P0 = P.enableFormation(SDS,P0);
         
         % ******* Influence on All Events: Cross *******
         P0.subset(P0.male, :) = true;
@@ -165,7 +166,7 @@ end
         P.rand(P0.index) = P.rand0toInf(1, 1);
         
         
-        % ******* Integrated Hazard *******
+%         % ******* Integrated Hazard *******
         P.alpha(subset) = P.baseline_factor + ...
             P.current_relations_factor*P0.relationCount(subset) + ...
             P.mean_age_factor*(P0.meanAge(subset) - P.age_limit) + ...
@@ -176,6 +177,7 @@ end
         
         P.eventTimes(subset) = ...
             P.expLinear(P.alpha(subset), P.beta, 0, P.rand(subset));
+
     end
 %% update
     function P0 = eventDissolution_update(P0)
@@ -203,9 +205,9 @@ end
         % P.beta(P0.subset) = P.beta(P0.subset) ;
         %+ P.behavioural_change_factor.*P0.relationCount(P0.subset);     
         
-        P.eventTimes(P0.subset) = ...
-            P.expLinear(P.alpha(P0.subset),P.beta(P0.subset), 0, P.rand(P0.subset));
-        
+         P.eventTimes(P0.subset) = ...
+             P.expLinear(P.alpha(P0.subset),P.beta(P0.subset), 0, P.rand(P0.subset));
+         
         P0.subset(P0.subset) = false;
     end
 %% intervene
@@ -261,14 +263,14 @@ function [props, msg] = eventDissolution_properties
 
 msg = '';
 
-props.baseline_factor = log(0.8);
+props.baseline_factor = log(0.5);
 props.community_difference_factor = -1;
 props.current_relations_factor = log(2); %log(4);
 props.individual_behavioural_factor = 0;
-props.mean_age_factor = -log(5)/40; %-log(hazard ration)/(age2-age1);
+props.mean_age_factor = 0; %-log(hazard ration)/(age2-age1);
 props.last_change_factor = log(0.8);
 props.age_limit = 15;
-props.age_difference_factor = log(1.2);
+props.age_difference_factor = log(1);
 props.transaction_sex_factor = 2;
 props.preferred_age_difference = 4;
 

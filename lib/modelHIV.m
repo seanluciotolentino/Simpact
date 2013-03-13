@@ -491,14 +491,14 @@ SDS.model_function = mfilename;
 SDS.population_function = '';
 
 SDS.start_date = '01-Jan-1998';
-SDS.end_date = '31-Dec-2028';
+SDS.end_date = '31-Dec-2018';
 SDS.number_of_communities = 2;
 
 SDS.iteration_limit = 100000;
-SDS.number_of_males = 320;
-SDS.number_of_females = 320;
-SDS.initial_number_of_males = 200;
-SDS.initial_number_of_females = 210;
+SDS.number_of_males = 150;
+SDS.number_of_females = 150;
+SDS.initial_number_of_males = 100;
+SDS.initial_number_of_females = 100;
 SDS.number_of_community_members = floor(SDS.initial_number_of_males/2); % 4 communities
 SDS.sex_worker_proportion = 0.03;
 SDS.number_of_relations = SDS.number_of_males*SDS.number_of_females;

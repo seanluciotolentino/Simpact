@@ -138,15 +138,15 @@ end
             factor =  P.fertility_rate_parameter*P.fertility_change;
         end
         
-        if motherBorn<=-30
+        %if motherBorn<=-30
         fertilityFactor = factor;
-        else
+        %else
           %  if motherBorn<=0
-                fertilityFactor = factor*(0.95)^(motherBorn+30);      
+                fertilityFactor = factor*(0.99)^(motherBorn+30);      
             %else
               %  fertilityFactor = P.fertility_rate_parameter*P.fertility_change^;
             %end
-        end
+        %end
         fertilityFactor= sum(age.*coefficient)*inRelationFraction*fertilityFactor;
         P_F = P.rand0toInf(1, 1);
         P.eventTimes(P0.male, P0.female) = P_F/fertilityFactor;   
@@ -170,8 +170,8 @@ end
 %% properties
 function [props, msg] = eventConception_properties
 
-props.fertility_rate_parameter = 0.15;
-props.fertility_change = 0.6;
+props.fertility_rate_parameter = 0.25;
+props.fertility_change = 0.9;
 msg = 'Birth implemented by birth event.';
 end
 

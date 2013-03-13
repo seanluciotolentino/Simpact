@@ -135,9 +135,9 @@ function [props, msg] = eventIntroduction_properties
 
 msg = '';
 
-props.number_of_introduced_HIV=20;
+props.number_of_introduced_HIV=10;
 props.period_of_introduced_HIV = {'start' 'end'
-    0.2, 0.5};
+    0, 3};
 props.gender_ratio = 0.5;
 end
 

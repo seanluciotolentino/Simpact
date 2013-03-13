@@ -70,7 +70,8 @@ end
         P.rand = P.rand0toInf(SDS.number_of_males, SDS.number_of_females);
         P.time0 = zeros(SDS.number_of_males, SDS.number_of_females, SDS.float);
         P.eventTimes = inf(SDS.number_of_males, SDS.number_of_females, SDS.float);
-        
+        P.count = 0;
+        P.cfh = NaN;
         % ******* Checks *******
         if P.beta == 0
             P.expLinear = spTools('handle', 'expConstant');
@@ -79,7 +80,7 @@ end
         
         P0.subset(SDS.males.born<-15,SDS.females.born<-15) = true;
         P0.birth = false;
-        P0 = eventFormation_enable(P0);
+        P0 = eventFormation_enable(SDS,P0);
         
     end
 
@@ -126,7 +127,7 @@ end
 
 %% fire
     function [SDS, P0] = eventFormation_fire(SDS, P0)
-        
+        P.count = P.count+1;
         % ******* Indices *******
         P.relation = P.relation + 1;
         P0.male = rem(P0.index - 1, SDS.number_of_males) + 1;
@@ -162,16 +163,17 @@ end
 
 
 %% enable
-    function P0 = eventFormation_enable(P0)
+    function P0 = eventFormation_enable(SDS,P0)
         % Invoked by eventDissolution_fire, eventBirth_fire
         % Use P0.subset
         if ~P.enable
             return
         end
-        
+        adultMales = P0.aliveMales&isnan(SDS.males.deceased)&SDS.males.born<=P0.now-15;
+        adultFemales = P0.aliveFemales&isnan(SDS.males.deceased)&SDS.females.born<=P0.now-15;
         P0.subset = P0.subset&~P0.current&~isfinite(P.eventTimes);
-        P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:,~P0.aliveFemales) = false;
+        P0.subset(~adultMales, :) = false;
+        P0.subset(:,~adultFemales) = false;
         P.rand(P0.subset) = P.rand0toInf(1,sum(sum(P0.subset)));
         subsetRelationsCount=repmat(P0.femaleRelationCount, size(P0.subset, 1), 1);
         P.alpha(P0.subset) = P.baseline_factor*P0.partnering(P0.subset) + ...
@@ -180,18 +182,33 @@ end
             P.female_current_relations_factor*subsetRelationsCount(P0.subset)+...
             P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ...
             P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
-            P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
-            P.preferred_age_difference)/8)-1) + ...
+            P.age_difference_factor*(abs(P0.ageDifference(P0.subset) - ...
+            P.preferred_age_difference)) + ...
             P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
             P.community_difference_factor*abs(P0.communityDifference(P0.subset));
         P.beta(P0.subset) = P.beta(P0.subset) + ...
             P.behavioural_change_factor.*P0.relationCount(P0.subset);
         %.*P0.BCCexposureMean(P0.subset)/P.campaign_roll_out_duration;
         
-        P.eventTimes(P0.subset) = ...
-            P.expLinear(P.alpha(P0.subset),P.beta(P0.subset),0,P.rand(P0.subset));
-        P.time0(P0.subset) = P0.now; % time when the event is enabled
+         % time when the event is enabled
+        
+%        % fixed turnover rate
+%         A = exp(P.alpha(adultMales,adultFemales));
+%        
+%         P.cfh = sum(sum(A));
+%        
+%         adults = sum(adultMales)+sum(adultFemales);
+%         ptr = 1;
+%         cfhtarget = adults/2*ptr;
+%         cfhcorrection = cfhtarget/P.cfh;
+%         A = A*cfhcorrection;
+%         P.alpha(adultMales,adultFemales) = log(A);
+        P.eventTimes(adultMales,adultFemales) = ...
+            P.expLinear(P.alpha(adultMales,adultFemales),P.beta(adultMales,adultFemales),0,P.rand(adultMales,adultFemales));
+        P.time0(adultMales,adultFemales) = P0.now;
+        
         P0.subset(P0.subset) = false;
+        
     end
 
 
@@ -199,17 +216,20 @@ end
     function P0 = eventFormation_update(SDS, P0, type)
         % updated by formation, dissolution
         % use P0.male, P0.female
+        adultMales = P0.aliveMales&isnan(SDS.males.deceased)&SDS.males.born<=P0.now-15;
+        adultFemales = P0.aliveFemales&isnan(SDS.males.deceased)&SDS.females.born<=P0.now-15;
         P0.subset(P0.male,:) = true;
         P0.subset(:,P0.female) = true;
         P0.subset = P0.subset&~P0.current&isfinite(P.eventTimes);
-        P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:,~P0.aliveFemales) = false;
+        P0.subset(~adultMales, :) = false;
+        P0.subset(:,adultFemales) = false;
         
         Pc = P.intExpLinear(P.alpha(P0.subset),P.beta(P0.subset),...
             0,min(P0.timeSinceLast(P0.subset),P0.now-P.time0(P0.subset)));
         
         P.rand(P0.subset) = P.rand(P0.subset)-Pc;
         P.rand(P.rand<0)=P.rand0toInf(1,sum(sum(P.rand<0)));
+        
         if type ==1
             % formation
             
@@ -239,22 +259,33 @@ end
             
         end
         
+        
+        
         P.alpha(P0.subset) = P.baseline_factor*P0.partnering(P0.subset) + ...
             P.current_relations_factor.*P0.relationCount(P0.subset) + ...
             P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
             P.female_current_relations_factor*femaleRelationMatrix(P0.subset)+...
             P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ...
             P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
-            P.age_difference_factor*(exp(abs(P0.ageDifference(P0.subset) - ...
-            P.preferred_age_difference)/8)-1) + ...
+            P.age_difference_factor*(abs(P0.ageDifference(P0.subset) - ...
+            P.preferred_age_difference)) + ...
             P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
             P.community_difference_factor*abs(P0.communityDifference(P0.subset));
         P.beta(P0.subset) = P.beta(P0.subset) + ...
             P.behavioural_change_factor.*P0.relationCount(P0.subset);
-        
-        
-        P.eventTimes(P0.subset) = ...
-            P.expLinear(P.alpha(P0.subset),P.beta(P0.subset), 0, P.rand(P0.subset));
+%         A = exp(P.alpha(adultMales,adultFemales));
+%        
+%         P.cfh = sum(sum(A));
+%        
+%         adults = sum(adultMales)+sum(adultFemales);
+%         ptr = 1;
+%         cfhtarget = adults/2*ptr;
+%         cfhcorrection = cfhtarget/P.cfh;
+%         A = A*cfhcorrection;
+%         P.alpha(adultMales,adultFemales) = log(A);
+        P.eventTimes(adultMales,adultFemales) = ...
+            P.expLinear(P.alpha(adultMales,adultFemales),P.beta(adultMales,adultFemales),0,P.rand(adultMales,adultFemales));
+        P.time0(adultMales,adultFemales) = P0.now;
         
         P0.subset(P0.subset) = false;
     end
@@ -286,20 +317,20 @@ function [props, msg] = eventFormation_properties
 
 msg = '';
 
-props.baseline_factor = log(0.1);
-props.current_relations_factor =log(0.18);
+props.baseline_factor = log(0.2);
+props.current_relations_factor =log(0.5);
 props.male_current_relations_factor =log(1);
 props.female_current_relations_factor =log(0.9);
 props.current_relations_difference_factor =log(1);
 props.individual_behavioural_factor = 0;
 props.behavioural_change_factor = 0;    % The effect of relations becomes larger during BCC;
-props.mean_age_factor = -log(5)/50; %-log(hazard ration)/(age2-age1);
-props.last_change_factor = log(1.3);         % NOTE: intHazard = Inf for d = -c !!!
+props.mean_age_factor = 0;% -log(5)/50; %-log(hazard ration)/(age2-age1);
+props.last_change_factor = 0; %log(1.3);         % NOTE: intHazard = Inf for d = -c !!!
 props.age_limit = 15;                 % no couple formation below this age
 props.age_difference_factor = -log(3)/5;
 props.preferred_age_difference = 4.5;
 props.community_difference_factor = 0;
-props.transaction_sex_factor = log(2);
+props.transaction_sex_factor = log(1.5);
 props.communities = {
     'lower exposure limit', 'upper exposure limit', 'exposure peak'
     0   .2  0
