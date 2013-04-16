@@ -322,29 +322,29 @@ function eventTest_intervene(policy,cd4,upscale)
 switch policy
     case 'population'
         P.criteria(2) = true;
-        P.targetCoverage = upscale/100;
-        P.targetCoverageSubpop = upscale/100;
+        P.targetCoverage = upscale;
+        P.targetCoverageSubpop = upscale;
         P.CD4baseline(1) = cd4;
         P.CD4baseline(2) = cd4;
     case 'pregnant'
         P.criteria(3) = true;
-        P.targetCoverageSubpop = upscale/100;
+        P.targetCoverageSubpop = upscale;
         P.CD4baseline(3) = cd4;
     case 'discordant'
         P.criteria(4) = true;
-        P.targetCoverageSubpop = upscale/100;
+        P.targetCoverageSubpop = upscale;
         P.CD4baseline(4) = cd4;
     case 'fsw'
         P.criteria(5) = true;
-        P.targetCoverageSubpop = upscale/100;
+        P.targetCoverageSubpop = upscale;
         P.CD4baseline(5) = cd4;
     case 'age50'
         P.criteria(6) = true;
-        P.targetCoverageSubpop = upscale/100;
+        P.targetCoverageSubpop = upscale;
         P.CD4baseline(6) = cd4;
     case 'nonbreast'
         P.criteria(7) = true;
-        P.targetCoverageSubpop = upscale/100;
+        P.targetCoverageSubpop = upscale;
         P.CD4baseline(7) = cd4;
 end
 end
@@ -363,12 +363,12 @@ function [props, msg] = eventTest_properties
 
 props.test_time = {
     'baseline'  'peak age'  'age shape' 'age factor' 'gender factor'  'concurrent factor' 'infection factor' 'pregnancy factor' 'revisit factor' 'time factor'
-    log(4)                 25                    2               0.1          0                       0                           1.5                               0                 2         log(2)
+    log(2)                 25                    2               0.1          0                       0                           1.5                               0                 2         log(2)
     };
 
 props.CD4_baseline_for_ARV = {
    'variables'                  'CD4 threshold' 'current time' 'current accessability' 'target time' 'target accessability' 
-    'population'                350                   '31-Dec-2012'             50              '30-Jun-2032'               70
+    'population'                350                   '31-Dec-2013'             40              '30-Jun-2015'               50
   %  'expansion group'      350                   '31-Dec-2012'             40              '30-Jun-2015'               40
     };
 props.option_B_coverage = 95;

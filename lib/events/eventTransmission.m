@@ -261,7 +261,7 @@ end
         probability = P.probability * P.probabilityChange(P0.male,P0.female);
         loglogP =  log(-log(1- probability/100));
         %loglogP = log(probability/100);
-        a = P.alpha(P0.male, P0.female) + loglogP + (P0.now>12)*(P0.now-12)*log(1-P.riskReduction);       
+        a = P.alpha(P0.male, P0.female) + loglogP + P0.now*log(1-P.riskReduction);       
         T = [timeHIVpos, P.t(2:end, idx)'+timeHIVpos];
         %         T = [timeHIVpos, P.t(2:end, idx)'];
         %         T = cumsum(T);
@@ -432,7 +432,7 @@ props.AIDS_mortality_distribution = {
     };
 props.infectiousness_decreased_by_condom = 0;
 props.infectiousness_decreased_by_ARV = .96;
-props.infectiousness_increased_during_conception = 2;
+props.infectiousness_increased_during_conception = 1;
 props.infectiousness_decreased_by_circumcision = 0.3;
 props.CD4_distribution_at_infection = {
     'baseline' 'age factor' 'gender difference' 'shape'
@@ -441,7 +441,7 @@ props.CD4_distribution_at_infection = {
 
 props.sexual_behaviour_parameters = {'baseline' 'mean age' 'age difference' 'relation type' 'relations count' 'serodiscordant' 'HIV disclosure' 'time'
     2 0 0 0 0 0 0 log(0.95)};
-props.risk_behaviour_reduction = 0.01;
+props.risk_behaviour_reduction = 0.03;
 
 end
 

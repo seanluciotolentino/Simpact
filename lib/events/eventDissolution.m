@@ -137,7 +137,7 @@ end
         P.blockTransmission(SDS, P0)
         P0.subset(P0.male, P0.female) = true;
         P0.current(P0.male, P0.female) = false;
-        P0 = P.enableFormation(SDS,P0);
+        P0 = P.enableFormation(P0);
         
         % ******* Influence on All Events: Cross *******
         P0.subset(P0.male, :) = true;
@@ -263,12 +263,12 @@ function [props, msg] = eventDissolution_properties
 
 msg = '';
 
-props.baseline_factor = log(0.5);
+props.baseline_factor = log(0.7);
 props.community_difference_factor = -1;
 props.current_relations_factor = log(2); %log(4);
 props.individual_behavioural_factor = 0;
-props.mean_age_factor = 0; %-log(hazard ration)/(age2-age1);
-props.last_change_factor = log(0.8);
+props.mean_age_factor = 0;% log(0.8); %-log(hazard ration)/(age2-age1);
+props.last_change_factor = 0;% log(1.3);
 props.age_limit = 15;
 props.age_difference_factor = log(1);
 props.transaction_sex_factor = 2;

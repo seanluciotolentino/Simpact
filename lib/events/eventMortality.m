@@ -82,11 +82,21 @@ end
         end
         % ******* Variables & Constants *******
         P.false = false(SDS.number_of_males, SDS.number_of_females);
+        daysPerYear = spTools('daysPerYear');
+        start = datenum(SDS.start_date)/daysPerYear;
+        reference = datenum(sprintf('01-Jan-%d',event.mortality_reference_year))/daysPerYear;
+        reference = reference - start;
         age0 = -[SDS.males.born, SDS.females.born];
+        bornReference = -age0-reference;
         P.rand = rand(1, elements, SDS.float);
         % temporary
-        P.scale(age0>=30) = P.scale(age0>=30) - 15;
-        P.scale(age0<30) = P.scale(age0<30)-0.5*age0(age0<30);
+        P.genderAdjust = event.gender_difference/2;
+        P.scale(bornReference<=-30) = P.scale(bornReference<=-30) - 15;
+        P.scale(bornReference<=30>-30&bornReference<=30) = ...
+            P.scale(bornReference<=30>-30&bornReference<=30)+0.5*bornReference(bornReference<=30>-30&bornReference<=30);
+        P.scale(bornReference>30) = P.scale(bornReference>30)+15;
+        P.scale(1:SDS.number_of_males)= P.scale(1:SDS.number_of_males)-P.genderAdjust;
+        P.scale((SDS.number_of_males+1):elements) = P.scale((SDS.number_of_males+1):elements)+P.genderAdjust;
         P.eventTimes = inf(SDS.number_of_males, SDS.number_of_females, SDS.float);
         if ~P.enable
             return
@@ -265,8 +275,9 @@ end
 function [props, msg] = eventMortality_properties
 
 msg = '';
-
+props.mortality_reference_year = 1980;
 props.Weibull_shape_parameter = 4;
 props.Weibull_scale_parameter = 70;
+props.gender_difference = 5;
 end
 

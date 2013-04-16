@@ -29,14 +29,26 @@ end
         
         P.rand0toInf = spTools('handle', 'rand0toInf');
         
+        if ~P.fertility_rate_from_data_file
+            P.fertility_rate_parameter = event.constant_fertility_parameter;
+        else
+            daysPerYear = spTools('daysPerYear');
+            P.start = datenum(SDS.start_date)/daysPerYear;
+            filename = event.fertility_rate_reference_file;
+            P.data = csvread(filename,1,0)/10;
+            P.data = [-Inf, P.data(1,2);P.data;Inf, P.data(size(P.data,1),2)];
+           
+            P.fertility_rate_parameter = interp1q(P.data(:,1),P.data(:,2),P.start);
+            
+        end
         %P.enableBirth = eventBirth('handle', 'enable');
         [P.enableBirth, msg] = spTools('handle', 'eventBirth', 'enable');
-         [P.enableANC, msg] = spTools('handle', 'eventANC', 'enable');
-         [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
+        [P.enableANC, msg] = spTools('handle', 'eventANC', 'enable');
+        [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
     end
 %% get
     function X = eventConception_get(t)
-	X = P;
+        X = P;
     end
 
 %% restore
@@ -44,13 +56,13 @@ end
         
         elements = SDS.number_of_males * SDS.number_of_females;
         msg = '';
-
-       	P = X;
-    	P.enable = SDS.conception.enable;
+        
+        P = X;
+        P.enable = SDS.conception.enable;
         
         [P.enableBirth, msg] = spTools('handle', 'eventBirth', 'enable');
-         [P.enableANC, msg] = spTools('handle', 'eventANC', 'enable');
-         [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
+        [P.enableANC, msg] = spTools('handle', 'eventANC', 'enable');
+        [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
     end
 
 %% eventTimes
@@ -76,31 +88,27 @@ end
         P0.male = rem(P0.index - 1, SDS.number_of_males) + 1;
         P0.female = ceil(P0.index/SDS.number_of_males);
         
-
+        
         
         P0.pregnant(P0.female) = true;
         P.enableBirth(P0)                   % uses P0.male, P0.female
-        P.enableANC(P0)  
-       
+        P.enableANC(P0)
+        
         %eventConception_block(P0)
         P.eventTimes(:,P0.female) = Inf;
-%         for male = find(P0.current(:, P0.female))'
-%             P0.male = male;
-%             P.eventTimes(male,P0.female) = Inf;      % uses P0.male, P0.female
-%         end
-       P0.index = P0.female + SDS.number_of_males;
-       P0.thisPregnantTime(P0.female) = P0.now;
-       currentIdx = SDS.relations.time(:, SDS.index.stop) == Inf;
-       for relIdx = find(currentIdx & (SDS.relations.ID(:, SDS.index.female) == P0.female) &...
-                  ismember(SDS.relations.ID(:, SDS.index.male),find(isnan(SDS.males.HIV_positive))))'
-              P0.male = SDS.relations.ID(relIdx, SDS.index.male);
-              if P0.serodiscordant(P0.male, P0.female)
-                  P0.conception = true;
-                  [SDS, P0] = P.updateTransmission(SDS, P0);
-                  P0.conception = false;
-              end
-       end
-
+        P0.index = P0.female + SDS.number_of_males;
+        P0.thisPregnantTime(P0.female) = P0.now;
+        currentIdx = SDS.relations.time(:, SDS.index.stop) == Inf;
+        for relIdx = find(currentIdx & (SDS.relations.ID(:, SDS.index.female) == P0.female) &...
+                ismember(SDS.relations.ID(:, SDS.index.male),find(isnan(SDS.males.HIV_positive))))'
+            P0.male = SDS.relations.ID(relIdx, SDS.index.male);
+            if P0.serodiscordant(P0.male, P0.female)
+                P0.conception = true;
+                [SDS, P0] = P.updateTransmission(SDS, P0);
+                P0.conception = false;
+            end
+        end
+        
         
     end
 
@@ -125,31 +133,20 @@ end
         %     P.fertility_scale_factor)^(1/P.Weibull_shape_parameter);
         % P_F = min(1, P.rand0toInf(1, 1)/P.fertility_scale_factor);
         % P.eventTimes(P0.male, P0.female) = -log(1 - P_F)/P.exponential_rate_parameter;
-        inRelationFraction = 0.6;
+        adjustment = 0.5;
         motherBorn =  SDS.females.born(P0.female);
         age = P0.now - motherBorn;
-        age = [age^4 age^3 age^2 age 1];       
+        age = [age^4 age^3 age^2 age 1];
         coefficient = [-1.96e-05     0.002876     -0.15373        3.448      -25.407];
         
-        if P0.now<=5
-            
-        factor = P.fertility_rate_parameter;
-        else
-            factor =  P.fertility_rate_parameter*P.fertility_change;
+        if ~P.fertility_rate_from_data_file
+            fertilityFactor = P.fertility_rate_parameter;
+        else          
+            fertilityFactor = interp1q(P.data(:,1),P.data(:,2),P0.now +P.start);            
         end
-        
-        %if motherBorn<=-30
-        fertilityFactor = factor;
-        %else
-          %  if motherBorn<=0
-                fertilityFactor = factor*(0.99)^(motherBorn+30);      
-            %else
-              %  fertilityFactor = P.fertility_rate_parameter*P.fertility_change^;
-            %end
-        %end
-        fertilityFactor= sum(age.*coefficient)*inRelationFraction*fertilityFactor;
+        fertilityFactor= sum(age.*coefficient)*adjustment*fertilityFactor;
         P_F = P.rand0toInf(1, 1);
-        P.eventTimes(P0.male, P0.female) = P_F/fertilityFactor;   
+        P.eventTimes(P0.male, P0.female) = P_F/fertilityFactor;
         if P.eventTimes(P0.male, P0.female)<0
             P.eventTimes(P0.male, P0.female) = Inf;
         end
@@ -169,9 +166,9 @@ end
 
 %% properties
 function [props, msg] = eventConception_properties
-
-props.fertility_rate_parameter = 0.25;
-props.fertility_change = 0.9;
+props.constant_fertility_parameter = 2.3;
+props.fertility_rate_from_data_file = true;
+props.fertility_rate_reference_file = '/Simpact/data/sa_fertility.csv';
 msg = 'Birth implemented by birth event.';
 end
 

@@ -82,7 +82,7 @@ end
         if ~P.enable
             return
         end
-               P.interveneTest(P.names{P0.index},P.threshold(P0.index), P.coverage(P0.index));
+               P.interveneTest(P.names{P0.index},P.threshold(P0.index), P.coverage(P0.index)/100);
                P.eventTimes(P0.index) = Inf;
 
     end

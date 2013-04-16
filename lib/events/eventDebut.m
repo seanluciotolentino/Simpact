@@ -110,7 +110,7 @@ end
             P0.current_relations_factorMean = (P0.malecurrent_relations_factor + P0.femalecurrent_relations_factor)/2;
             
             
-            P0 = P.enableFormation(SDS,P0);
+            P0 = P.enableFormation(P0);
 
             P.eventTimes(P0.index) = Inf;
     end
