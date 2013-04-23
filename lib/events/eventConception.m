@@ -133,7 +133,7 @@ end
         %     P.fertility_scale_factor)^(1/P.Weibull_shape_parameter);
         % P_F = min(1, P.rand0toInf(1, 1)/P.fertility_scale_factor);
         % P.eventTimes(P0.male, P0.female) = -log(1 - P_F)/P.exponential_rate_parameter;
-        adjustment = 0.5;
+        adjustment = 0.4;
         motherBorn =  SDS.females.born(P0.female);
         age = P0.now - motherBorn;
         age = [age^4 age^3 age^2 age 1];

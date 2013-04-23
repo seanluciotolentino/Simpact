@@ -1,5 +1,5 @@
-sds = load('sds_0201.mat');
-sds = sds.SDS;
+sds = load('sds_0000_SQ_OLD.mat');
+%sds = sds.SDS;
 deceased = [sds.males.deceased, sds.females.deceased];
 alive = isnan(deceased);
 born = [sds.males.born,sds.females.born];
@@ -16,11 +16,11 @@ for i=1:sum(sds.ARV.ID>0)
     sds.ARV.time(i,2)=min(sds.ARV.time(i,2),deceased(sds.ARV.ID(i)));
 end
 arv = sum(sds.ARV.time(:,2)-sds.ARV.time(:,1));
-% effect_personyear = personyear/arv
+effect_personyear = personyear/arv
 % effect_pos = (pos-105)/arv
 
 %display(sprintf('%d/%d',pos,effect))
-
+%%
 demographicGraphs(sds)
 %%
 formedRelations(sds)
@@ -33,6 +33,10 @@ born = [SDS.males.born,SDS.females.born];
 x = deceased-born;
 x = x(~isnan(x));
 mean(x)
+
+mother = [SDS.males.mother,SDS.females.mother];
+born = born(mother>0);
+motherborn = SDS.females.born(mother(mother>0));
 %%
 
 initial = modelHIV('new');
@@ -47,7 +51,7 @@ SDS0.initial_number_of_females = n;
 SDS0.number_of_males = n*1.5;
 SDS0.number_of_females = n*1.5;
 SDS0.number_of_community_members = floor(SDS0.initial_number_of_males/2); % 4 communities
-SDS0.sex_worker_proportion = 0.03;
+SDS0.sex_worker_proportion = 0.01;
 SDS0.number_of_relations = SDS0.number_of_males*SDS0.number_of_females;
 SDS0.HIV_introduction.number_of_introduced_HIV=round(0.08*n);
 SDS0.formation.baseline_factor = log(50/n);
@@ -72,4 +76,3 @@ SDS = spRun('start',SDS0);
     SDS.P0.event(4).P.threshold(1) = 5000;
     SDS.P0.event(4).P.coverage(1) = 100;
     %%
-    SDS = spRun('restart',SDS);

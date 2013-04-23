@@ -28,7 +28,7 @@ end
 
 
 %% preprocess
-function [SDS, msg] = modelHIV_preprocess(SDS)
+    function [SDS, msg] = modelHIV_preprocess(SDS)
         % Invoked by spRun('start') during initialisation
         
         msg = '';
@@ -66,14 +66,14 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         maleRange = 1 : SDS.initial_number_of_males;
         femaleRange = 1 : SDS.initial_number_of_females;
         P0.subset = falseMatrix;
-
+        
         P0.aliveMales = malesFalse;
         P0.aliveMales(maleRange) = true;
         P0.aliveFemales = femalesFalse;
         P0.aliveFemales(femaleRange) = true;
         P0.pregnant = femalesFalse;
         
-       %P0.ANCtest = false; % false for general type testing, true for test at ANC
+        %P0.ANCtest = false; % false for general type testing, true for test at ANC
         
         % ******* Population *******
         SDS.males.father = malesInt;
@@ -92,9 +92,9 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         SDS.females.BCC_exposure = femalesNaN;
         SDS.males.current_relations_factor = malesNaN;
         SDS.females.current_relations_factor = femalesNaN;
-
         
-                
+        
+        
         % ******* Communities TEMP!!! *******
         
         communityMale = empiricalCommunity(SDS.initial_number_of_males, SDS.number_of_community_members);
@@ -119,26 +119,26 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         SDS.males.BCC_exposure(maleRange) = 1;
         SDS.females.BCC_exposure(femaleRange) = 1;
         % ******* BCC Current Relations Factor ********
-           %Using Discrete Value for 2 communities
-         SDS.males.current_relations_factor(maleRange) = SDS.formation.current_relations_factor;
-           SDS.females.current_relations_factor(femaleRange) = SDS.formation.current_relations_factor;          
+        %Using Discrete Value for 2 communities
+        SDS.males.current_relations_factor(maleRange) = SDS.formation.current_relations_factor;
+        SDS.females.current_relations_factor(femaleRange) = SDS.formation.current_relations_factor;
         
-           %Using Beta Distribution for 2 communities
-           %{
+        %Using Beta Distribution for 2 communities
+        %{
            betaPars.alpha = [100, 100];
            betaPars.beta = [1, 1];
            current_relations_factorMale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityMale, SDS);
            current_relations_factorFemale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityFemale, SDS);
            SDS.males.current_relations_factor(maleRange) = current_relations_factorMale;
-           SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;       
-           %}
-           
+           SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;
+        %}
+        
         % ******* Partnering TEMP!!! *******
         betaPars = [0.5, 0.7];
         partneringFcn = 'mean';
-%         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-%         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-%         
+        %         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        %         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        %
         partMales = repmat(SDS.males.partnering, SDS.number_of_females,1);
         partFemales = repmat(SDS.females.partnering',1, SDS.number_of_males);
         formationBCCfield = str2field(eventFormation('name'));
@@ -158,16 +158,23 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         
         
         % ******* Aging TEMP!!! *******
-        agesMale = empiricalage(SDS.initial_number_of_males, 65, 4);
-        SDS.males.born(maleRange) = cast(-agesMale, SDS.float);    % -years old
-        agesFemale = empiricalage(SDS.initial_number_of_females, 66, 4);
-        SDS.females.born(femaleRange) = cast(-agesFemale, SDS.float);% -years old
-        adjust = round(SDS.initial_number_of_males*0.015);
-        SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*2;
-        SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*2;
-
-
-% ******* HIV Properties *******
+        %         agesMale = empiricalage(SDS.initial_number_of_males, 65, 4);
+        %         SDS.males.born(maleRange) = cast(-agesMale, SDS.float);    % -years old
+        %         agesFemale = empiricalage(SDS.initial_number_of_females, 66, 4);
+        %         SDS.females.born(femaleRange) = cast(-agesFemale, SDS.float);% -years old
+        %         adjust = round(SDS.initial_number_of_males*0.015);
+        %         SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*2;
+        %         SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*2;
+        %
+        
+        ageMale = MonteCarloAge(SDS.initial_number_of_males, 'man', SDS.age_file);
+        SDS.males.born(maleRange) = cast(-ageMale, SDS.float);    % -years old
+        ageFemale = MonteCarloAge(SDS.initial_number_of_females, 'woman', SDS.age_file);
+        SDS.females.born(femaleRange) = cast(-ageFemale, SDS.float);% -years old
+        adjust = round(SDS.initial_number_of_males*0.01);
+        SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*3;
+        SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*3;
+        % ******* HIV Properties *******
         SDS.males.HIV_source = malesInt;
         SDS.females.HIV_source = femalesInt;
         SDS.males.HIV_positive = malesNaN;
@@ -225,7 +232,7 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         %%%%%%%%%%%%%%%%%
         P0.ANC= false;
         SDS.tests.typeANC = false(SDS.number_of_tests,1);
-       %---------------------------------------------------------%        
+        %---------------------------------------------------------%
         
         
         SDS.males.AIDSdeath =  spTools('weibull', 11, 2.25, rand(1, SDS.number_of_males));
@@ -272,7 +279,7 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         
         P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);%
         P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);%
-
+        
         P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);%
         P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);%
         
@@ -288,7 +295,7 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         
         P0.current_relations_factorMax = max(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
         P0.current_relations_factorMin = min(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
-        P0.current_relations_factorMean = (P0.malecurrent_relations_factor+P0.femalecurrent_relations_factor)./2;%        
+        P0.current_relations_factorMean = (P0.malecurrent_relations_factor+P0.femalecurrent_relations_factor)./2;%
         
         P0.current = falseMatrix;
         
@@ -308,7 +315,7 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
         P0.thisChild = nan(1, SDS.number_of_females);
         % 'baseline' 'mean age factor' 'age difference factor' 'relation
         % type' 'relations count' 'serodiscordant' 'HIV disclosure'
-   
+        
         % ******* Event Functions *******
         P0.numberOfEvents = 0;
         P0.elements = [];
@@ -348,9 +355,9 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
                 end
                 P0.numberOfEvents = P0.numberOfEvents + 1;
                 if strcmp(subS.event_file,'eventFormation')
-                [elements, initMsg, P0] = feval(subS.event_file, 'init', SDS, subS,P0);
+                    [elements, initMsg, P0] = feval(subS.event_file, 'init', SDS, subS,P0);
                 else
-                [elements, initMsg] = feval(subS.event_file, 'init', SDS, subS);
+                    [elements, initMsg] = feval(subS.event_file, 'init', SDS, subS);
                 end
                 if ~isempty(initMsg)
                     msg = sprintf('%s%s\n', msg, initMsg);
@@ -378,18 +385,18 @@ function [SDS, msg] = modelHIV_preprocess(SDS)
     end
 
 %% repreprocess
-function [SDS,msg] = modelHIV_repreprocess(SDS,P0restart)
+    function [SDS,msg] = modelHIV_repreprocess(SDS,P0restart)
         P0 =P0restart;
-        % Invoked by spRun('start') during initialisation       
-        msg = '';                
+        % Invoked by spRun('start') during initialisation
+        msg = '';
         P0.firedEvent = [];
-        for ii = 1:P0.numberOfEvents 
+        for ii = 1:P0.numberOfEvents
             X = P0.event(ii).P;
             feval(P0.event(ii).restore,SDS,X);
         end
         P0.event = rmfield(P0.event,'P');
         SDS.start_date = SDS.end_date;
-        SDS.end_date = '31-Dec-2032'; 
+        SDS.end_date = '31-Dec-2032';
     end
 
 %% nextEvent
@@ -400,13 +407,13 @@ function [SDS,msg] = modelHIV_repreprocess(SDS,P0restart)
             %P0.event(ii).time = P0.event(ii).eventTime(SDS);  % earliest per event
             P0.eventTimes(P0.event(ii).index) = P0.event(ii).eventTimes(SDS, P0);
         end
-
+        
         % ******* 2: Find First Event & Its Entry *******
         [P0.eventTime, firstIdx] = min(P0.eventTimes);  % index into event times
         P0.eventTime(~isreal(P0.eventTime)) = real(P0.eventTime);
         if P0.eventTime <= 0
-             problem = find(P0.cumsum >= firstIdx, 1) - 1;
-             time = P0.eventTime;
+            problem = find(P0.cumsum >= firstIdx, 1) - 1;
+            time = P0.eventTime;
             %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
             P0.eventTime = 0.0001;
             %keyboard
@@ -425,7 +432,7 @@ function [SDS,msg] = modelHIV_repreprocess(SDS,P0restart)
         P0.maleAge = P0.maleAge + P0.eventTime;
         P0.femaleAge = P0.femaleAge + P0.eventTime;
         P0.meanAge = P0.meanAge + P0.eventTime;
-
+        
         P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
         
         % ******* 4: Advance All Events *******
@@ -451,7 +458,7 @@ function [SDS,msg] = modelHIV_repreprocess(SDS,P0restart)
         end
         
         SDS.P0 = P0;
-
+        
     end
 end
 
@@ -487,6 +494,7 @@ SDS = [];
 SDS.user_name = getenv('USERNAME');
 SDS.file_date = datestr(time);
 SDS.data_file = sprintf('data%s.m', datestr(time, 30));
+SDS.age_file = 'sa_2003.csv';
 SDS.model_function = mfilename;
 SDS.population_function = '';
 
@@ -564,13 +572,13 @@ SDS.relations = struct('ID', [], 'time', []);
 % ******* Fetch Available Events *******
 folder = [fileparts(which(mfilename)) '/events'];
 if ~isdeployed
-addpath(folder)
+    addpath(folder)
 end
 
 for thisFile = dir(fullfile(folder , 'event*.m'))'
     if strcmp(thisFile.name, 'eventTemplate.m')
         continue
-    end    
+    end
     [~, eventFile] = fileparts(thisFile.name);
     thisField = str2field(feval(eventFile, 'name'));
     SDS.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
