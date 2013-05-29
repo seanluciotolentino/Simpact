@@ -707,7 +707,8 @@ transNet = [header
 
 % ******* Store *******
 % folder = jproject('folder');
-folder = '/Users/wimdelva/Documents/Simpact/wim/csvfiles';
+% folder = '/Users/wimdelva/Documents/Simpact/wim/csvfiles';
+folder = '/Users/wimdelva/Simpact/Wim/csvfiles';
 
 [~, file] = fileparts(SDS.data_file);
 [ok, msg] = spTools_exportCSV_print(fullfile(folder, [file, 'people.csv']), allC);
