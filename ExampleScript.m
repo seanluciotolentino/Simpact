@@ -1,34 +1,33 @@
-%Example script of how to run simpact without GUI:
-%addpath([fileparts(fileparts(which(mfilename))) '/lib']) %use the line below when running in a subfolder (i.e. SDS, fei, wim)
-addpath( 'lib' ); %this line necessary when running in a subfolder (not main directory)
-warning off
 
+% (1)
+% add the current folder to MatLab Path
+% generates a new SDS (Simpact Data Structure)
+addpath(genpath('/Simpact'))
 
-%One run of the modelHIV
-[SDS,msg] = modelHIV('new'); %generates a new SDS with all the required stuff
+[SDS,msg] = modelHIV('new'); 
 
-%set some initial parameters
-SDS.number_of_males = 100; %set parameters of the model manually
+% (2)
+%set parameters of the population
+SDS.number_of_males = 100; 
 SDS.number_of_females = 100;
-SDS.initial_number_of_females = SDS.number_of_females/2;
-SDS.initial_number_of_males = SDS.number_of_males/2;
-SDS.number_of_relations =SDS.number_of_males^2;
+SDS.initial_number_of_females = 50;
+SDS.initial_number_of_males = 50;
+SDS.number_of_relations = 10^2;
+% etc...
+% set parameters of events
+SDS0.formation.baseline_factor = log(0.5);
+SDS0.formation.preferred_age_difference = 4;
+% etc...
 
-%disable some events
-SDS.events.HIV_test.enable = 0;
-SDS.events.test.enable = 0;
-SDS.events.debut.enable = 0;
+% (3)
+% actually run the model
+[SDS, ~] = spRun('start',SDS); 
 
-%actually run the model
-[SDS2, ~] = spRun('start',SDS); 
-fprintf(1,'\n')
+% (4)
+% export result as .csv files
+% or generate graphs from the
+exportCSV(SDS,'Simpact',1,'example');
+concurrencyPrevalence(SDS);
+demographicGraphs(SDS);
 
-%grab some useful information from the returned results (SDS2)
-prevalence = zeros(1,20);
-for i = 1:20
-	HIVpos = length([ find(SDS2.males.HIV_positive<i)  find(SDS2.females.HIV_positive<i)]); %infected before this round
-	HIVmaledeath = find(SDS2.males.deceased.*SDS2.males.AIDS_death>0); %times of HIV deaths
-	HIVfemaledeaths = find(SDS2.females.deceased.*SDS2.females.AIDS_death>0);
-	HIVdeath = length([find(HIVmaledeath<i)  find(HIVfemaledeaths<i)]);%HIV death this round
-	prevalence(i) = HIVpos - HIVdeath;
-end
+

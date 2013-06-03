@@ -19,6 +19,12 @@ switch fcn
 end
 [varargout{1:nargout}] = eval(cmd);
 
+        % ******* Function Handles *******
+        empiricalExposure = spTools('handle', 'empiricalExposure');
+        empiricalCommunity = spTools('handle', 'empiricalCommunity');
+        empiricalCRF = spTools('handle', 'empiricalCRF');  
+
+
 %% init
     function [elements, msg] = eventBirth_init(SDS, event)
         
@@ -60,7 +66,6 @@ end
             msg = sprintf('%s%s\n', msg, thisMsg);
         end
          [P.blockANC, thisMsg] = spTools('handle', 'eventANC', 'block');
-         [P.enableTest, thisMsg] = spTools('handle', 'eventTest', 'enable');
          [P.enableDebut, thisMsg] = spTools('handle', 'eventDebut', 'enable');
         
         % ******* Variables & Constants *******
@@ -115,7 +120,6 @@ end
             msg = sprintf('%s%s\n', msg, thisMsg);
         end
          [P.blockANC, thisMsg] = spTools('handle', 'eventANC', 'block');
-         [P.enableTest, thisMsg] = spTools('handle', 'eventTest', 'enable');
     end
 
 %% eventTime
@@ -189,15 +193,13 @@ end
         %    empiricalExposure(1, llimit, ulimit, peak, SDS.(sex).community(ID));
        
         
-        SDS.(sex).current_relations_factor(ID) = SDS.events.formation.current_relations_factor;
+        SDS.(sex).current_relations_factor(ID) = SDS.formation.current_relations_factor;
             %empiricalCRF(1, betaPars, SDS.(sex).community(ID), SDS);  
         
         switch sex
             case 'males'
                 %P0.alive(ID, :) = true;
                 P0.aliveMales(ID) = true;
-                P0.maleAge(ID,:) = zeros(1,SDS.number_of_females);
-                P0.timeSinceLast(ID,:) = -15*ones(1,SDS.number_of_males);
                 %P0.malecommID = repmat(SDS.males.commID(:), 1, SDS.number_of_females);
                 P0.maleCommunity(ID, :) = SDS.males.community(ID);
                 P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);
@@ -212,14 +214,10 @@ end
             case 'females'
                 %P0.alive(:, ID) = true;
                 P0.aliveFemales(ID) = true;
-                P0.femaleAge(:,ID) = zeros(SDS.number_of_males,1);
-                P0.timeSinceLast(:,ID) = -15*ones(SDS.number_of_females,1);
                 %P0.femalecommID = repmat(SDS.females.commID(:)', SDS.number_of_males, 1);
                 P0.femaleCommunity(:, ID) = SDS.females.community(ID);
                 P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);
                 P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);
-                
-                P0.subset(:, ID) = true;
                 Pmort.index = SDS.number_of_males + ID;
         end
         
@@ -238,9 +236,6 @@ end
             P.enableConception(SDS,P0)          % uses P0.male, P0.female
         end     
  
-        
-        P0.birth = false;
-
         eventBirth_abort(P0)                % uses P0.female
         P.enableDebut(Pmort.index);
         
@@ -281,7 +276,7 @@ end
 %% properties
 function [props, msg] = eventBirth_properties
 
-props.boy_girl_ratio = 100/205;
+props.boy_girl_ratio = 1/2.01;
 %NIU props.Weibull_shape_parameter = 2.25;       % kappa
 %NIU props.Weibull_scale_parameter = 10.5;       % lambda
 props.gestation = 40/52;

@@ -1009,8 +1009,7 @@ ReportingInterval = .1;                  % yearly degree distibutions
 ReportingTimes = ReportingInterval : ReportingInterval : timeRange;
 N = numel(ReportingTimes);
 population = zeros(N, 1);
-%age_edges = 0:10:120;
-age_edges = 0:15:120;
+age_edges = 0:10:120;
 histo_matrix = zeros(N, 1);
 
 
@@ -1048,22 +1047,42 @@ set(hAxes, 'YLim', [0, round(max(population))+10])
 axesPrp.Position(2) = .1;
 hAxes = axes(axesPrp);
 
-b = bar(hAxes,  ReportingTimes, histo_matrix,'stack');
-set(hAxes,'YLim',[0 1],'XLim',[0 timeRange]);
+
+
+linePrp.Parent = hAxes;
+%axesPrp.YLim = [0 1];
+%axesPrp.Xlim = [0, timeRange];
+%set(hAxes, 'XLim', [0, timeRange])
+set(hAxes, 'Ylim', [0, 1])
+
+bar(hAxes, histo_matrix,'stack')
+
+set(hAxes,'YLim',[0 1]); %'XLim',[0 timeRange]);
 xlabel(hAxes, 'time [years]')
 ylabel(hAxes, 'Fraction')
+%legend(hAxes(2), '1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+legend(hAxes, '0-10', '10-20', '20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90-100',...
+    '100-110', '110-120'); %num2cell(num2str((1 : size(histo_matrix, 2))')))
 
-%delineations = {'0-10', '10-20', '20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90-100'};
-delineations = {'0-15', '15-30', '30-45', '45-60', '60-75', '75-90', '90-105','105-120'};
-order = 8:-1:1; %otherwise the legend is upside down
-legend(b(order),delineations{order},'Location','BestOutside' )
+
+
+% line(newYear, incidence*100, linePrp)
+
+%set(hAxes, 'XLim', [0, timeRange])
+
+
+
+
 
 %linkaxes(hAxes, 'x')
 zoom(hFig, 'on')
 figure(hFig)
 
+
 % ******* Add Print Buttons *******
 spGraphs_print(hFig)
+
+
 ok = true;
 end
 

@@ -86,7 +86,10 @@ end
         handles.update(SDS, '-restore')     % update GUI
         handles.msg(' ok\n')
         
-        
+
+        handles.get = feval(SDS.model_function, 'handle', 'get');
+        handles.restart = feval(SDS.model_function, 'handle', 'restart');
+
         % ******* Grand Event Loop *******
         handles.msg('Simulating...')
         tic
@@ -108,10 +111,185 @@ end
             pause(eps)  % required for GUI events, i.e., stop button
             progress = t/dateRange;
             if progress >= 1 || P.stop
+                
                 handles.progress(min(1, progress), handles)
                 break
             end
-            handles.progress(progress, handles) %comment this out to get rid of constant updates
+       
+            handles.progress(progress, handles)
+        end
+        
+        elapsedTime = timestr(toc);
+        handles.update(SDS, '-restore')     % update GUI
+        
+        if P.stop
+            handles.fail('Warning: interrupt by user')
+            
+        elseif ii == SDS.iteration_limit
+            nowStr = datestr(datenum(SDS.start_date) + t*daysPerYear);
+            handles.fail('Warning: iteration limit reached at %s (%0.2f%%)', ...
+                nowStr, progress*100)
+            
+        else
+            handles.msg(' ok\n')
+            P.stop = ~P.stop;
+        end
+        
+        
+        % ******* Post Processing *******
+        SDS = handles.get(SDS);
+        handles.msg('Post processing...')
+        [SDS, msg] = feval(SDS.model_function, 'postprocess', SDS);
+        if isempty(msg)
+            handles.msg(' ok\n')
+        else
+            handles.fail(msg)
+        end
+        handles.update(SDS, '-restore')     % update GUI
+        
+        
+        handles.msg('Elapsed time %s, %d iterations\n', elapsedTime, ii)
+        P.stop = true;
+        
+        
+        %% start_msg
+        function spRun_start_msg(msg, varargin)
+            %msgLog = [msgLog, sprintf(msg, varargin{:})];
+            %This is throwing errors for an unknown reason-- so I commented
+            %it out. -Lucio 08/17/2012
+        end
+        
+        
+        %% start_fail
+        function spRun_start_fail(msg, varargin)
+            
+            spRun_start_msg('\n')
+            spRun_start_msg(msg, varargin{:})
+            spRun_start_msg('\n')
+        end
+        
+        
+        %% start_progress
+        function spRun_start_progress(fraction, varargin)
+            
+            fprintf(1, '\b\b\b\b\b\b')
+            fprintf(1, '%5.1f%%', fraction*100)
+        end
+        
+        
+        %% start_update
+        function spRun_start_update(SDSnew, varargin)
+            
+            %WHY fprintf(1, '\n')
+            SDS = SDSnew;
+            SDS.file_date = datestr(now);
+        end
+    end
+
+%% restart
+    function [SDS, msgLog] = spRun_restart(S)
+        
+        msgLog = '';
+        
+        
+        % ******* Checks *******
+        if ~isstruct(S)
+            return
+        end
+        
+        P0 = S.P0;
+        pastT = P0.now;
+        tests = S.tests;
+        arv = S.ARV;
+        relations = S.relations;
+        S= rmfield(S,'P0');
+        S=rmfield(S,'tests');
+        S=rmfield(S,'ARV');
+        S=rmfield(S,'relations');
+        if isfield(S, 'data') && isa(S.data, 'function_handle')
+            handles = S;
+            handles.msg('\nStarting simulation at %s\n', datestr(now))
+            SDS = handles.data();
+        else
+            fprintf(1, 'Console run progress: <init>')
+            handles = struct('msg', @spRun_start_msg, ...
+                'fail', @spRun_start_fail, ...
+                'progress', @spRun_start_progress, ...
+                'update', @spRun_start_update);
+            SDS = S;
+        end
+        
+        reqField = 'model_function';
+        if ~isfield(SDS, reqField)
+            handles.fail('Error: required field %s not present', reqField)
+            return
+        end
+        
+        if exist(SDS.model_function, 'file') ~= 2
+            handles.fail('Error: can''t find model function %s.m', SDS.model_function)
+            return
+        end
+        
+        
+        % ******* Pre Process *******
+        P.stop = false;
+        daysPerYear = spTools('daysPerYear');
+        handles.msg('Pre processing...')
+        SDS.relations = relations;
+        SDS.tests = tests;
+        SDS.ARV = arv;
+        try
+            
+            [SDS, msg] = feval(SDS.model_function, 'repreprocess', SDS,P0);  % apply changes
+            handles.nextEvent = feval(SDS.model_function, 'handle', 'nextEvent');
+        catch Exception
+            handles.fail(Exception)
+            handles.update(SDS, '-restore')
+            P.stop = true;
+            rethrow(Exception)
+        end
+        if ~isempty(msg)
+            % less severe
+            handles.fail(msg)
+            handles.update(SDS, '-restore')
+            P.stop = true;
+            return
+        end
+        %dateRange = datenum(SDS.end_date) - datenum(SDS.start_date);
+        dateRange = (datenum(SDS.end_date) - datenum(SDS.start_date))/daysPerYear;
+        handles.update(SDS, '-restore')     % update GUI
+        handles.msg(' ok\n')
+        
+        handles.restart = feval(SDS.model_function, 'handle', 'restart');
+
+        % ******* Grand Event Loop *******
+        handles.msg('Simulating...')
+        tic
+        
+        for ii = 1 : SDS.iteration_limit
+            % ******* Next Event *******
+            try
+                [SDS, t] = handles.nextEvent(SDS);   % SDS = modelHIV('nextEvent', SDS);
+            catch Exception
+                handles.fail(Exception)
+                handles.update(SDS, '-restore')
+                P.stop = true;
+                rethrow(Exception)
+                %return
+            end
+            
+            
+            % ******* Interruption *******
+            pause(eps)  % required for GUI events, i.e., stop button
+            t = t-pastT;
+            progress = t/dateRange;
+            if progress >= 1 || P.stop
+              
+                handles.progress(min(1, progress), handles)
+                break
+            end
+           
+            handles.progress(progress, handles)
         end
         
         elapsedTime = timestr(toc);
@@ -179,7 +357,6 @@ end
             SDS.file_date = datestr(now);
         end
     end
-
 
 %% pause/continue
     function spRun_pause(handles)

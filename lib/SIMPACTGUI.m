@@ -10,7 +10,7 @@ function SIMPACTGUI
 % Copyright 2009-2010 by Hummeling Engineering (www.hummeling.com)
 debugMsg
 
-Prefs.debug = false;
+Prefs.debug = isme;
 Prefs.appName = 'SIMPACT';
 Prefs.appIcon = 'si_icon.jpg';
 Prefs.hidden = {'index', 't0', 'tFinal', 'output'};

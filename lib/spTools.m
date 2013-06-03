@@ -263,7 +263,7 @@ end
 %% simtimeTOdate
 function date = spTools_simtimeTOdate(sim_time,start_date)
     daysPerYear = spTools_daysPerYear;
-    date = datestr((sim_time*daysPerYear)+datenum(start_date),1) ;
+    date = datestr((sim_time*daysPerYear)+datenum(start_date)) ;
 end
 
 %% dateTOsimtime
@@ -279,7 +279,7 @@ function integral = spTools_intExpLinear(alpha, beta, t1, t2)
 % with integral:
 %   H(t1-t2) = 1/beta exp(alpha)(exp(beta t2) - exp(beta t1))
 
-integral = exp(alpha) .* (exp(beta * t2) - exp(beta .* t1)) ./ beta;
+integral = exp(alpha) .* (exp(beta .* t2) - exp(beta .* t1)) ./ beta;
 
 beta0idx = beta == 0;
 if ~any(beta0idx)
@@ -449,258 +449,77 @@ ok = false; %#ok<NASGU>
 msg = ''; %#ok<NASGU>
 
 
-maleFields = fieldnames(SDS.males)';
-maleSC = [maleFields; cell(size(maleFields))];
-maleS = struct(maleSC{:});
+malesID = 1:SDS.number_of_males;
+femalesID=1:SDS.number_of_females;
+femalesID=femalesID+SDS.number_of_males;
+ID=[malesID,femalesID]';
+gender = [zeros(1, SDS.number_of_males) ones(1,SDS.number_of_females)]';
+born=[SDS.males.born, SDS.females.born]';
+deceased=[SDS.males.deceased, SDS.females.deceased]';
+father=[SDS.males.father, SDS.females.father]';
+mother=[SDS.males.mother,SDS.females.mother]'+SDS.number_of_females;
+mother(mother==SDS.number_of_males)=0;
+HIV_positive=[SDS.males.HIV_positive,SDS.females.HIV_positive]';
 
-femaleFields = fieldnames(SDS.females)';
-femaleSC = [femaleFields; cell(size(femaleFields))];
-femaleS = struct(femaleSC{:});
-
-allS = mergeStruct(maleS, femaleS);
-allFields = fieldnames(allS)';
-
-maleIdx = isfinite(SDS.males.born);
-maleCount = find(maleIdx, 1, 'last');
-malesNaN = nan(maleCount, 1, SDS.float);
-malesM = [
-    (1 : maleCount)',   zeros(maleCount, 1)
-    ];
-for this = allFields
-    if ~isfield(SDS.males, this{1})
-        malesM = [malesM, malesNaN];
-        continue
-    end
-    malesM = [malesM, cast(SDS.males.(this{1})(maleIdx)', SDS.float)];
-end
-
-femaleIdx = isfinite(SDS.females.born);
-femaleCount = find(femaleIdx, 1, 'last');
-femalesNaN = nan(femaleCount, 1, SDS.float);
-femalesM = [
-    (1 : femaleCount)', ones(femaleCount, 1)
-    ];
-for this = allFields
-    if ~isfield(SDS.females, this{1})
-        femalesM = [femalesM, femalesNaN];
-        continue
-    end
-    femalesM = [femalesM, cast(SDS.females.(this{1})(femaleIdx)', SDS.float)];
-end
-
-allC = [
-    [{'ID', 'gender'}, field2str(allFields)]
-    num2cell(malesM)
-    num2cell(femalesM)
-    ];
+male_source = SDS.males.HIV_source + SDS.number_of_males;
+male_source(male_source==SDS.number_of_males)=0;
+HIV_source = [male_source, SDS.females.HIV_source]';
+sex_worker = [false(1, SDS.number_of_males), SDS.females.sex_worker]';
+AIDS_death = [SDS.males.AIDS_death,SDS.females.AIDS_death]';
+CD4_infection = [SDS.males.CD4Infection, SDS.females.CD4Infection]';
+CD4_death = [SDS.males.CD4Death, SDS.females.CD4Death]';
+ARV_eligible=[SDS.males.ARV_eligible, SDS.females.ARV_eligible]';
 
 
-% ******* Relations *******
-relIdx = SDS.relations.ID(:, 1) > 0;
-relIDs = SDS.relations.ID(relIdx, :);
-relTimes = SDS.relations.time(relIdx, :);
+ID=single(ID);
+father=single(father);
+mother=single(mother);
+HIV_source = single(HIV_source);
 
-maleRels = relIDs(:, SDS.index.male);
-[males, ~, maleIdx] = unique(maleRels);
-maleRelCount = zeros(size(males));
-for ii = 1 : numel(males)
-    maleRelCount(ii) = sum(maleRels == males(ii));
-end
+allC=[ID,gender, born, deceased, father, mother, HIV_positive, HIV_source, ...
+    sex_worker, AIDS_death, CD4_infection,CD4_death, ARV_eligible];
+allC=allC(~isnan(born),:);
+head={'id','gender','born','deceased','father','mother','hiv.positive','hiv.source',...
+    'sex.worker', 'aids.death','cd4.infection','cd4.death','arv.eligible'};
+allC=[head
+    num2cell(allC)];
 
-femaleRels = relIDs(:, SDS.index.female);
-[females, ~, femaleIdx] = unique(femaleRels);
-femaleRelCount = zeros(size(females));
-for ii = 1 : numel(females)
-    femaleRelCount(ii) = sum(femaleRels == females(ii));
-end
-
-maxRels = max([maleRelCount; femaleRelCount]);
-
-% [females, femaleRelCount]
-
-relHeader = {};
-for ii = 1 : maxRels
-    relHeader = [relHeader, {
-        sprintf('partner %d', ii), sprintf('start %d', ii), sprintf('stop %d', ii)
-        }];
-end
-
-maleRelM = nan(maleCount, 3*maxRels, SDS.float);
-for ii = 1 : numel(maleRelCount)
-    idx = maleRels == males(ii);
-    M = [cast(femaleRels(idx), SDS.float),  relTimes(idx, 1:2)]';
-    maleRelM(males(ii), 1:3*maleRelCount(ii)) = M(:)';
-end
-
-femaleRelM = nan(femaleCount, 3*maxRels, SDS.float);
-for ii = 1 : numel(femaleRelCount)
-    idx = femaleRels == females(ii);
-    M = [cast(maleRels(idx), SDS.float),  relTimes(idx, 1:2)]';
-    femaleRelM(females(ii), 1:3*femaleRelCount(ii)) = M(:)';
-end
-
-allC = [allC, [
-    relHeader
-    num2cell(maleRelM)
-    num2cell(femaleRelM)
-    ]
-    ];
-
-
-% ******* Christiaan's data format request *******
-for ii = 1 : maxRels
-    startmaleIdx(:,ii) = ~isnan(maleRelM(:,(3*ii)-1));
-    malestarttimes(:,ii) = maleRelM(:,(3*ii)-1);
-    stopmaleIdx(:,ii) = ~isnan(maleRelM(:,3*ii));
-    malestoptimes(:,ii) = maleRelM(:,3*ii);
-
-    startfemaleIdx(:,ii) = ~isnan(femaleRelM(:,(3*ii)-1));
-    femalestarttimes(:,ii) = femaleRelM(:,(3*ii)-1);
-    stopfemaleIdx(:,ii) = ~isnan(femaleRelM(:,3*ii));
-    femalestoptimes(:,ii) = femaleRelM(:,3*ii);
-
-end
-
-maleStatusM = nan(maleCount, 2*2*maxRels, SDS.float);
-femaleStatusM = nan(femaleCount, 2*2*maxRels, SDS.float);
-
-
-[dim1,dim2] = size(malestarttimes);
-for ii = 1 : dim1
-    malestarttimesii = malestarttimes(ii,:);
-    malestoptimesii = malestoptimes(ii,:);
-    
-    [statusTimeM, statusIdxM] = sort([
-    malestarttimesii(startmaleIdx(ii,:)),malestoptimesii(stopmaleIdx(ii,:))
-    ],2);
-    
-    relationCount = [
-    ones(sum(startmaleIdx(ii,:), 2), 1)
-    -ones(sum(stopmaleIdx(ii,:), 2), 1)
-    ];
-
-    relationCumSum = cumsum(relationCount(statusIdxM));
-    
-    maleStatusM(ii,1:length(statusTimeM)) = statusTimeM;
-    maleStatusM(ii,2*maxRels+1:2*maxRels+length(statusTimeM)) = relationCumSum;
-    
-end
-
-[dim1,dim2] = size(femalestarttimes);
-for ii = 1 : dim1
-    femalestarttimesii = femalestarttimes(ii,:);
-    femalestoptimesii = femalestoptimes(ii,:);
-    
-    [statusTimeF, statusIdxF] = sort([
-    femalestarttimesii(startfemaleIdx(ii,:)),femalestoptimesii(stopfemaleIdx(ii,:))
-    ],2);
-    
-    relationCount = [
-    ones(sum(startfemaleIdx(ii,:), 2), 1)
-    -ones(sum(stopfemaleIdx(ii,:), 2), 1)
-    ];
-
-    relationCumSum = cumsum(relationCount(statusIdxF));
-    
-    femaleStatusM(ii,1:length(statusTimeF)) = statusTimeF;
-    femaleStatusM(ii,2*maxRels+1:2*maxRels+length(statusTimeF)) = relationCumSum;
-    
-end
-
-statusHeader = {};
-for ii = 1 : 2*maxRels    % each relationship gives 2 relationship status updates
-    statusHeader = [statusHeader, {
-        sprintf('relationstatustime %d', ii)
-        }];
-end
-
-for ii = 1 : 2*maxRels    % each relationship gives 2 relationship status updates
-    statusHeader = [statusHeader, {
-        sprintf('relationstatus %d', ii)
-        }];
-end
-
-
-allC = [allC, [
-    statusHeader
-    num2cell(maleStatusM)
-    num2cell(femaleStatusM)
-    ]
-    ];
 
 % ******* Seperate file for relations *******
-t = datenum(SDS.end_date)-datenum(SDS.start_date);
-t = t/365;
-relations = [single(SDS.relations.ID), SDS.relations.time(:,1:2)];
-relations = relations(relations(:,1)~=0,:);
-relations = [relations, zeros(length(relations(:,1)), 5)];
-% male age, female age, serostatus, convertion
-for i = 1:length(relations(:,1))
-    if relations(i,4)>=t;
-        relations(i,4) = Inf;
-    end
-    male = SDS.relations.ID(i,1);female = SDS.relations.ID(i,2);
-    relations(i, 5) = SDS.males.born(male);
-    relations(i, 6) = SDS.males.born(female);
-    malePos = SDS.males.HIV_positive(male)<relations(i,3);
-    femalePos = SDS.females.HIV_positive(female)<relations(i,3);
-    relations(i, 7) = ~(malePos&femalePos)|(~malePos&~femalePos);
-    
-    if SDS.males.HIV_source(male)==female&&SDS.males.HIV_positive(male)>relations(i,3)&&SDS.males.HIV_positive(male)<=relations(i,4)
-    relations(i,8) = true;
-    end
-    if SDS.females.HIV_source(female)==male&&SDS.females.HIV_positive(female)>relations(i,3)&&SDS.females.HIV_positive(female)<=relations(i,4)
-    relations(i,9) = true;
-    end 
-end
-
-relations(:,2) = relations(:,2)+SDS.number_of_males;
-population = SDS.number_of_males+SDS.number_of_females;
-ID = [unique(SDS.relations.ID(:,1))
-    unique(SDS.relations.ID(:,2))+SDS.number_of_males];
-ID = setdiff(1:population,ID);
-isolate = nan(length(ID),9);
-
-
-for i = 1:length(ID)
-    if ID(i)<=SDS.number_of_males&&SDS.males.born(ID(i))<=t-15
-        isolate(i,5) = SDS.males.born(ID(i));
-        isolate(i,1)=single(ID(i));
-    else
-        if ID(i)>SDS.number_of_males&&SDS.females.born(ID(i)-SDS.number_of_males)<=t-15
-        isolate(i,6) = SDS.females.born(ID(i)-SDS.number_of_males);
-        isolate(i,2)=single(ID(i));
-        end
-    end
-end
-relations(:,4) = relations(:,4)-relations(:,3);
-
-header = {'maleID' 'femaleID' 'start_time' 'duration' 'male_birth' 'female_birth' 'serodicordant_start' 'male_convertion' 'female_convertion'};
-relations = [header,
+relations = [single([SDS.relations.ID]), SDS.relations.time(:,1:2),single(SDS.relations.proximity)];
+relations(:,2)=relations(:,2)+SDS.number_of_males;
+relations=relations(relations(:,1)~=0,:);
+header = {'male.id' 'female.id' 'start.time' 'end.time','proximity'};
+relations = [header
 num2cell(relations)   
-num2cell(isolate)
 ];
 
-%********Seperate file for transmission network*********
-maleID = 1:SDS.number_of_males;
-femaleID = (SDS.number_of_males+1):population;
-transNet = SDS.males.HIV_source(~isnan(SDS.males.HIV_positive))';
-transNet(transNet~=0) = transNet(transNet~=0) + SDS.number_of_males;
- transNet =[transNet   maleID(~isnan(SDS.males.HIV_positive))'   SDS.males.HIV_positive(~isnan(SDS.males.HIV_positive))'];
-transNet = [transNet
-    SDS.females.HIV_source(~isnan(SDS.females.HIV_positive))'  femaleID(~isnan(SDS.females.HIV_positive))'  SDS.females.HIV_positive(~isnan(SDS.females.HIV_positive))'];
-transNet = transNet(transNet(:,1)~=0,:);
-header = {'source_ID' 'infected_ID' 'infection_time'};
-transNet = [header
-    num2cell(transNet)];
+%********Seperate file for test*********
+test = [single(SDS.tests.ID),SDS.tests.time];
+test = test(test(:,1)~=0,:);
+header = {'id','time'};
+test = [header
+    num2cell(test)];
 
+%********Seperate file for ARV*********
+ARV = [single(SDS.ARV.ID),SDS.ARV.time, single(SDS.ARV.CD4), SDS.ARV.life_year_saved];
+ARV = ARV(ARV(:,1)~=0,:);
+header = {'id','arv.start','arv.stop','cd4','life.year.saved'};
+ARV = [header
+    num2cell(ARV)];
 
 % ******* Store *******
-folder = jproject('folder');
-[~, file] = fileparts(SDS.data_file);
-[ok, msg] = spTools_exportCSV_print(fullfile(folder, [file, '.csv']), allC);
-[ok, msg] = spTools_exportCSV_print(fullfile(folder,[file,'relations.csv']),relations);
-[ok, msg] = spTools_exportCSV_print(fullfile(folder, [file, 'trans.csv']), transNet);
+folder ='result/csv'; 
+if ~isdir(folder)
+mkdir(folder);
+end
+file=SDS.data_file(14:17);
+save(fullfile(folder, ['sds_', file, '.mat']), 'SDS');
+[ok, msg] = exportCSV_print(fullfile(folder, ['allC_', file, '.csv']), allC);
+[ok, msg] = exportCSV_print(fullfile(folder,['relation_', file,'.csv']),relations);
+[ok, msg] = exportCSV_print(fullfile(folder, ['test_', file, '.csv']), test);
+[ok, msg] = exportCSV_print(fullfile(folder, ['arv_', file, '.csv']), ARV);
+    
 %% exportCSV_print
     function [ok, msg] = spTools_exportCSV_print(csvFile, dataC)
         
