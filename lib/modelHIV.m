@@ -1,5 +1,5 @@
 function varargout = modelHIV(fcn, varargin)
-%modelHIV SIMPACT HIV model function which controls the data structure.
+%MODELHIV SIMPACT HIV model function which controls the data structure.
 %   This function implements new, nextEvent, preprocess, initialise, menu.
 %
 %   See also SIMPACT, spRun, spTools.
@@ -33,7 +33,7 @@ end
         
         msg = '';
         
-%         spTools('resetRand')	% reset random number generator
+        %spTools('resetRand')	% reset random number generator
         
         % ******* Function Handles *******
         %empiricalExposure = spTools('handle', 'empiricalExposure');
@@ -66,18 +66,14 @@ end
         maleRange = 1 : SDS.initial_number_of_males;
         femaleRange = 1 : SDS.initial_number_of_females;
         P0.subset = falseMatrix;
-        P0.subset(maleRange, femaleRange) = true;
-        %P0.alive = true(1, populationCount);     % WIP
-        %P0.alive = P0.subset;       % initially alive population
-        %P0.aliveRange = false(1, populationCount);
-        %P0.aliveRange(1 : populationCount) = true;
+        
         P0.aliveMales = malesFalse;
         P0.aliveMales(maleRange) = true;
         P0.aliveFemales = femalesFalse;
         P0.aliveFemales(femaleRange) = true;
         P0.pregnant = femalesFalse;
         
-       %P0.ANCtest = false; % false for general type testing, true for test at ANC
+        %P0.ANCtest = false; % false for general type testing, true for test at ANC
         
         % ******* Population *******
         SDS.males.father = malesInt;
@@ -96,9 +92,9 @@ end
         SDS.females.BCC_exposure = femalesNaN;
         SDS.males.current_relations_factor = malesNaN;
         SDS.females.current_relations_factor = femalesNaN;
-
         
-                
+        
+        
         % ******* Communities TEMP!!! *******
         
         communityMale = empiricalCommunity(SDS.initial_number_of_males, SDS.number_of_community_members);
@@ -120,138 +116,64 @@ end
         SDS.males.BCC_exposure(maleRange) = BCCexposureMale;
         SDS.females.BCC_exposure(femaleRange) = BCCexposureFemale;
         %}
-%         SDS.males.BCC_exposure(maleRange) = 1;  UNUSED?
-%         SDS.females.BCC_exposure(femaleRange) = 1; UNUSED?
+        SDS.males.BCC_exposure(maleRange) = 1;
+        SDS.females.BCC_exposure(femaleRange) = 1;
         % ******* BCC Current Relations Factor ********
         %Using Discrete Value for 2 communities
-        %LUCIO -- in changing to SDS.events I had to change this, though
-        %I don't know what it does 2012/09/19
-        SDS.males.current_relations_factor(:) = SDS.events.formation.current_relations_factor;
-        SDS.females.current_relations_factor(:) = SDS.events.formation.current_relations_factor;          
-
+        SDS.males.current_relations_factor(maleRange) = SDS.formation.current_relations_factor;
+        SDS.females.current_relations_factor(femaleRange) = SDS.formation.current_relations_factor;
+        
         %Using Beta Distribution for 2 communities
         %{
-        betaPars.alpha = [100, 100];
-        betaPars.beta = [1, 1];
-        current_relations_factorMale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityMale, SDS);
-        current_relations_factorFemale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityFemale, SDS);
-        SDS.males.current_relations_factor(maleRange) = current_relations_factorMale;
-        SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;       
+           betaPars.alpha = [100, 100];
+           betaPars.beta = [1, 1];
+           current_relations_factorMale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityMale, SDS);
+           current_relations_factorFemale = empiricalCRF(SDS.initial_number_of_males,betaPars,communityFemale, SDS);
+           SDS.males.current_relations_factor(maleRange) = current_relations_factorMale;
+           SDS.females.current_relations_factor(femaleRange) = current_relations_factorFemale;
         %}
-           
-        % ******* Partnering TEMP!!! *******
-        betaPars(1) = SDS.betaPars1;
-        betaPars(2) = SDS.betaPars2;
-
-        partneringFcn = 'mean';
-        SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-        SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
         
-        [partMales, pathFemales] = ndgrid(SDS.males.partnering, SDS.females.partnering);
-        formationfield = str2field(eventFormation('name'));
-        if isfield(SDS, formationfield)
-            partneringFcn = SDS.(formationfield).partnering_function.SelectedItem;
+        % ******* Partnering TEMP!!! *******
+        betaPars = [0.5, 0.7];
+        partneringFcn = 'mean';
+        %         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        %         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        %
+        partMales = repmat(SDS.males.partnering, SDS.number_of_females,1);
+        partFemales = repmat(SDS.females.partnering',1, SDS.number_of_males);
+        formationBCCfield = str2field(eventFormation('name'));
+        if isfield(SDS, formationBCCfield)
+            partneringFcn = SDS.(formationBCCfield).partnering_function.SelectedItem;
         end
         switch partneringFcn
             case 'min'
-                P0.partnering = min(partMales, pathFemales);
+                P0.partnering = min(partMales, partFemales);
             case 'max'
-                P0.partnering = max(partMales, pathFemales);
+                P0.partnering = max(partMales, partFemales);
             case 'mean'
-                P0.partnering = (partMales + pathFemales)/2;
+                P0.partnering = (partMales + partFemales)/2;
             case 'product'
-                P0.partnering = partMales.*pathFemales;
+                P0.partnering = partMales.*partFemales;
         end
         
-        % ******* Individual age mixing parameters *******
-        % individual age difference preference (optimum)
-        mu_individ_age = SDS.mu_individ_age;
-        sigma_individ_age = SDS.sigma_individ_age;
-        SDS.males.preferred_age_difference = cast(normrnd(mu_individ_age,sigma_individ_age,SDS.number_of_males,1), SDS.float);
-        SDS.females.preferred_age_difference = cast(normrnd(mu_individ_age,sigma_individ_age,SDS.number_of_females,1), SDS.float);
-        [P0.pref_age_diffMales, P0.pref_age_diffFemales] = ndgrid(SDS.males.preferred_age_difference, SDS.females.preferred_age_difference);
-        
-        % individual age difference factor
-        mean_age_diff_factor = SDS.mean_age_diff_factor;
-        range_age_diff_factor = SDS.range_age_diff_factor;
-        
-        ageDiffFactorFcn = SDS.interventions.AgeMixingChange.ageDiffFactorFcn;
-        SDS.males.ageDiffFactor = cast(malesOnes.*mean_age_diff_factor + (rand(1,SDS.number_of_males)-0.5)*range_age_diff_factor, SDS.float);
-        SDS.females.ageDiffFactor = cast(femalesOnes.*mean_age_diff_factor + (rand(1,SDS.number_of_females)-0.5)*range_age_diff_factor, SDS.float);
-        
-        [ageDiffFactMales, ageDiffFactFemales] = ndgrid(SDS.males.ageDiffFactor, SDS.females.ageDiffFactor);
-        agedifffield = str2field(eventFormation('name'));
-        if isfield(SDS, agedifffield)
-            ageDiffFactorFcn = SDS.(agedifffield).agediff_function.SelectedItem;
-        end
-        switch ageDiffFactorFcn
-            case 'min'
-                P0.agediff = min(ageDiffFactMales, ageDiffFactFemales);
-            case 'max'
-                P0.agediff = max(ageDiffFactMales, ageDiffFactFemales);
-            case 'mean'
-                P0.agediff = (ageDiffFactMales + ageDiffFactFemales)/2;
-            case 'product'
-                P0.agediff = -(ageDiffFactMales.*ageDiffFactFemales);
-        end
-        
-        % individual mean age growth factor
-        mu_mean_age_growth = SDS.mu_mean_age_growth;
-        sigma_mean_age_growth = SDS.sigma_mean_age_growth;
-        
-        meanAgeGrowthFactorFcn = SDS.interventions.AgeMixingChange.meanAgeGrowthFactorFcn;
-        
-        SDS.males.meanAgeGrowthFactor = cast(normrnd(mu_mean_age_growth,sigma_mean_age_growth,SDS.number_of_males,1), SDS.float);
-        SDS.females.meanAgeGrowthFactor = cast(normrnd(mu_mean_age_growth,sigma_mean_age_growth,SDS.number_of_females,1), SDS.float);
-        
-        [meanAgeGrowthFactMales, meanAgeGrowthFactFemales] = ndgrid(SDS.males.meanAgeGrowthFactor, SDS.females.meanAgeGrowthFactor);
-        meanAgeGrowthfield = str2field(eventFormation('name'));
-        if isfield(SDS, meanAgeGrowthfield)
-            meanAgeGrowthFactorFcn = SDS.(meanAgeGrowthfield).meanagegrowth_function.SelectedItem;
-        end
-        switch meanAgeGrowthFactorFcn
-            case 'min'
-                P0.meanagegrowth = min(meanAgeGrowthFactMales, meanAgeGrowthFactFemales);
-            case 'max'
-                P0.meanagegrowth = max(meanAgeGrowthFactMales, meanAgeGrowthFactFemales);
-            case 'mean'
-                P0.meanagegrowth = (meanAgeGrowthFactMales + meanAgeGrowthFactFemales)/2;
-            case 'product'
-                P0.meanagegrowth = meanAgeGrowthFactMales.*meanAgeGrowthFactFemales;
-        end
-        
-        % individual mean age dispersion growth factor
-        mu_mean_age_dispersion_growth = SDS.mu_mean_age_dispersion_growth;
-        sigma_mean_age_dispersion_growth = SDS.sigma_mean_age_dispersion_growth;
-        
-        meanAgeDispersionGrowthFactorFcn = SDS.interventions.AgeMixingChange.meanAgeDispersionGrowthFactorFcn;
-        
-        SDS.males.meanAgeDispersionGrowthFactor = cast(normrnd(mu_mean_age_dispersion_growth,sigma_mean_age_dispersion_growth,SDS.number_of_males,1), SDS.float);
-        SDS.females.meanAgeDispersionGrowthFactor = cast(normrnd(mu_mean_age_dispersion_growth,sigma_mean_age_dispersion_growth,SDS.number_of_females,1), SDS.float);
-        
-        [meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales] = ndgrid(SDS.males.meanAgeDispersionGrowthFactor, SDS.females.meanAgeDispersionGrowthFactor);
-        meanAgeDispersionGrowthfield = str2field(eventFormation('name'));
-        if isfield(SDS, meanAgeDispersionGrowthfield)
-            meanAgeDispersionGrowthFactorFcn = SDS.(meanAgeDispersionGrowthfield).meanagedispersiongrowth_function.SelectedItem;
-        end
-        switch meanAgeDispersionGrowthFactorFcn
-            case 'min'
-                P0.meanagedispersiongrowth = min(meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales);
-            case 'max'
-                P0.meanagedispersiongrowth = max(meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales);
-            case 'mean'
-                P0.meanagedispersiongrowth = (meanAgeDispersionGrowthFactMales + meanAgeDispersionGrowthFactFemales)/2;
-            case 'product'
-                P0.meanagedispersiongrowth = meanAgeDispersionGrowthFactMales.*meanAgeDispersionGrowthFactFemales;
-        end
         
         % ******* Aging TEMP!!! *******
-        agesMale = empiricalage(SDS.initial_number_of_males);
-        SDS.males.born(maleRange) = cast(-agesMale, SDS.float);    % -years old
-        agesFemale = empiricalage(SDS.initial_number_of_females);
-        SDS.females.born(femaleRange) = cast(-agesFemale, SDS.float);% -years old
+        %         agesMale = empiricalage(SDS.initial_number_of_males, 65, 4);
+        %         SDS.males.born(maleRange) = cast(-agesMale, SDS.float);    % -years old
+        %         agesFemale = empiricalage(SDS.initial_number_of_females, 66, 4);
+        %         SDS.females.born(femaleRange) = cast(-agesFemale, SDS.float);% -years old
+        %         adjust = round(SDS.initial_number_of_males*0.015);
+        %         SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*2;
+        %         SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*2;
+        %
         
-        
+        ageMale = MonteCarloAgeSA(SDS.initial_number_of_males, 'man', SDS.age_file);
+        SDS.males.born(maleRange) = cast(-ageMale, SDS.float);    % -years old
+        ageFemale = MonteCarloAgeSA(SDS.initial_number_of_females, 'woman', SDS.age_file);
+        SDS.females.born(femaleRange) = cast(-ageFemale, SDS.float);% -years old
+        adjust = round(SDS.initial_number_of_males*0.01);
+        SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*3;
+        SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*3;
         % ******* HIV Properties *******
         SDS.males.HIV_source = malesInt;
         SDS.females.HIV_source = femalesInt;
@@ -267,8 +189,6 @@ end
         SDS.females.ARV_stop = femalesNaN;
         SDS.males.circumcision = malesNaN;
         SDS.males.condom = malesZeros;
-        SDS.females.condom = femalesZeros;
-        SDS.females.conception = femalesFalse;
         SDS.males.ARV = malesFalse;
         SDS.females.ARV = femalesFalse;
         %---------------------------------------------------------%
@@ -283,17 +203,24 @@ end
         SDS.females.CD4ARV = femalesNaN;
         SDS.males.CD4Death = malesNaN;
         SDS.females.CD4Death = femalesNaN;
-        SDS.females.conceptions = femalesZeros;
+        SDS.males.CD4_500 = malesNaN;
+        SDS.females.CD4_500 = femalesNaN;
+        SDS.males.CD4_350 = malesNaN;
+        SDS.females.CD4_350 = femalesNaN;
+        SDS.males.CD4_200 = malesNaN;
+        SDS.females.CD4_200 = femalesNaN;
+        
         SDS.males.AIDSdeath = malesNaN; %since infection
         SDS.females.AIDSdeath = femalesNaN;
         SDS.person_years_aquired = 0;
         SDS.males.behaviour_factor = malesNaN;
-        SDS.females.behaviour_factor = femalesNaN;
+        SDS.females.behaviour_factor = femalesFalse;
         
         SDS.females.sex_worker = rand(1, SDS.number_of_females)<= SDS.sex_worker_proportion;
         
         SDS.tests.ID= zeros(SDS.number_of_tests,1, SDS.integer);
         SDS.tests.time = nan(SDS.number_of_tests,1, SDS.float);
+        SDS.tests.enter = Inf(SDS.number_of_tests,1, SDS.float);
         
         SDS.ARV.ID = zeros(SDS.number_of_ARV, 1, SDS.integer);
         SDS.ARV.CD4 = zeros(SDS.number_of_ARV, 1, SDS.integer);
@@ -305,14 +232,16 @@ end
         %%%%%%%%%%%%%%%%%
         P0.ANC= false;
         SDS.tests.typeANC = false(SDS.number_of_tests,1);
-       
-        SDS.males.AIDSdeath =  spTools('weibull', 12, 2.25, rand(1, SDS.number_of_males));
-        SDS.females.AIDSdeath =  spTools('weibull', 12, 2.25, rand(1, SDS.number_of_females));
-       
+        %---------------------------------------------------------%
+        
+        
+        SDS.males.AIDSdeath =  spTools('weibull', 11, 2.25, rand(1, SDS.number_of_males));
+        SDS.females.AIDSdeath =  spTools('weibull', 11, 2.25, rand(1, SDS.number_of_females));
+        
         % ******* Initialise Relations *******
         SDS.relations.ID = zeros(SDS.number_of_relations, 2, SDS.integer);
         SDS.relations.type = zeros(SDS.number_of_relations, 2, SDS.integer);
-        %SDS.relations.condom_use = zeros(SDS.number_of_relations,1,SDS.integer);
+        SDS.relations.condom_use = zeros(SDS.number_of_relations,1,SDS.integer);
         SDS.relations.proximity = zeros(SDS.number_of_relations,1,SDS.integer);
         % single requires relative time (dt) for accuracy,
         % for base 1/1/00 datenum results in 1.5 hrs resolution
@@ -339,6 +268,8 @@ end
         
         P0.maleAge = -repmat(SDS.males.born(:), 1, SDS.number_of_females);
         P0.femaleAge = -repmat(SDS.females.born(:)', SDS.number_of_males, 1);
+        P0.maleAge(P0.maleAge<15) = NaN;
+        P0.femaleAge(P0.femaleAge<15) = NaN;
         P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
         
         %%%%%%%%
@@ -346,27 +277,25 @@ end
         P0.femaleCommunity = repmat(SDS.females.community(:)', SDS.number_of_males, 1);
         
         
-        % P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females); % UNUSED?
-        % P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1); % UNUSED?
-
+        P0.maleBCCexposure = repmat(SDS.males.BCC_exposure(:), 1, SDS.number_of_females);%
+        P0.femaleBCCexposure = repmat(SDS.females.BCC_exposure(:)', SDS.number_of_males, 1);%
+        
         P0.malecurrent_relations_factor = repmat(SDS.males.current_relations_factor(:), 1, SDS.number_of_females);%
         P0.femalecurrent_relations_factor = repmat(SDS.females.current_relations_factor(:)', SDS.number_of_males, 1);%
         
-        P0.timeSinceLast = min(...
-            repmat(-SDS.males.born(:), 1, SDS.number_of_females), ...
-            repmat(-SDS.females.born(:)', SDS.number_of_males, 1));
+        P0.timeSinceLast = zeros(SDS.number_of_males,SDS.number_of_females);
         
         P0.ageDifference = P0.maleAge - P0.femaleAge;
         
         %%%%%%%
         P0.communityDifference = cast(P0.maleCommunity - P0.femaleCommunity, SDS.float);
-%         P0.BCCexposureMax = max(P0.maleBCCexposure,P0.femaleBCCexposure);%
-%         P0.BCCexposureMin = min(P0.maleBCCexposure,P0.femaleBCCexposure);%
-%         P0.BCCexposureMean = (P0.maleBCCexposure+P0.femaleBCCexposure)./2;%
+        P0.BCCexposureMax = max(P0.maleBCCexposure,P0.femaleBCCexposure);%
+        P0.BCCexposureMin = min(P0.maleBCCexposure,P0.femaleBCCexposure);%
+        P0.BCCexposureMean = (P0.maleBCCexposure+P0.femaleBCCexposure)./2;%
         
         P0.current_relations_factorMax = max(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
         P0.current_relations_factorMin = min(P0.malecurrent_relations_factor,P0.femalecurrent_relations_factor);%
-        P0.current_relations_factorMean = (P0.malecurrent_relations_factor+P0.femalecurrent_relations_factor)./2;%        
+        P0.current_relations_factorMean = (P0.malecurrent_relations_factor+P0.femalecurrent_relations_factor)./2;%
         
         P0.current = falseMatrix;
         
@@ -378,14 +307,15 @@ end
         P0.HIVpos = [
             SDS.males.HIV_positive, SDS.females.HIV_positive
             ]';
-        P0.eligible = [malesFalse, femalesFalse];
+        P0.ARV = [malesFalse,femalesFalse];
         P0.introduce = false;
-        P0.optionB = false;
+        P0.optionB = femalesFalse;
         P0.thisPregnantTime = nan(1, SDS.number_of_females);
+        P0.breastfeedingStop = nan(1, SDS.number_of_females);
         P0.thisChild = nan(1, SDS.number_of_females);
         % 'baseline' 'mean age factor' 'age difference factor' 'relation
         % type' 'relations count' 'serodiscordant' 'HIV disclosure'
-   
+        
         % ******* Event Functions *******
         P0.numberOfEvents = 0;
         P0.elements = [];
@@ -424,7 +354,11 @@ end
                     return
                 end
                 P0.numberOfEvents = P0.numberOfEvents + 1;
-                [elements, initMsg] = feval(subS.event_file, 'init', SDS, subS);
+                if strcmp(subS.event_file,'eventFormation')
+                    [elements, initMsg, P0] = feval(subS.event_file, 'init', SDS, subS,P0);
+                else
+                    [elements, initMsg] = feval(subS.event_file, 'init', SDS, subS);
+                end
                 if ~isempty(initMsg)
                     msg = sprintf('%s%s\n', msg, initMsg);
                 end
@@ -435,6 +369,8 @@ end
                 P0.event(P0.numberOfEvents).eventTimes = feval(subS.event_file, 'handle', 'eventTimes');
                 P0.event(P0.numberOfEvents).advance = feval(subS.event_file, 'handle', 'advance');
                 P0.event(P0.numberOfEvents).fire = feval(subS.event_file, 'handle', 'fire');
+                P0.event(P0.numberOfEvents).get = feval(subS.event_file,'handle','get');
+                P0.event(P0.numberOfEvents).restore = feval(subS.event_file,'handle','restore');
             end
             
             for thisField = fieldnames(subS)'
@@ -448,37 +384,40 @@ end
         end
     end
 
+%% repreprocess
+    function [SDS,msg] = modelHIV_repreprocess(SDS,P0restart)
+        P0 =P0restart;
+        % Invoked by spRun('start') during initialisation
+        msg = '';
+        P0.firedEvent = [];
+        for ii = 1:P0.numberOfEvents
+            X = P0.event(ii).P;
+            feval(P0.event(ii).restore,SDS,X);
+        end
+        P0.event = rmfield(P0.event,'P');
+        SDS.start_date = SDS.end_date;
+        SDS.end_date = '31-Dec-2032';
+    end
 
 %% nextEvent
-    function [SDS, t] = modelHIV_nextEvent(SDS)        
+    function [SDS, t] = modelHIV_nextEvent(SDS)
+        
         % ******* 1: Fetch Event Times *******
         for ii = 1 : P0.numberOfEvents
             %P0.event(ii).time = P0.event(ii).eventTime(SDS);  % earliest per event
             P0.eventTimes(P0.event(ii).index) = P0.event(ii).eventTimes(SDS, P0);
         end
         
-        
         % ******* 2: Find First Event & Its Entry *******
         [P0.eventTime, firstIdx] = min(P0.eventTimes);  % index into event times
-        
- 
-        
-        if P0.eventTime == 0 % This may happen for HIV introduction
-%             problem = find(P0.cumsum >= firstIdx, 1) - 1
-%             time = P0.eventTime
-            %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
-            P0.eventTime = 0;
-            %keyboard
-        end
-        
-        if P0.eventTime < 0
-%             problem = find(P0.cumsum >= firstIdx, 1) - 1
-%             time = P0.eventTime
+        P0.eventTime(~isreal(P0.eventTime)) = real(P0.eventTime);
+        if P0.eventTime <= 0
+            problem = find(P0.cumsum >= firstIdx, 1) - 1;
+            time = P0.eventTime;
             %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
             P0.eventTime = 0.0001;
             %keyboard
         end
-        
         if ~isfinite(P0.eventTime)
             t = Inf;
             return
@@ -486,48 +425,20 @@ end
         eventIdx = find(P0.cumsum >= firstIdx, 1) - 1;  % index of event
         P0.index = firstIdx - P0.cumsum(eventIdx);      % index into event
         
+        
         % ******* 3: Update Time *******
         %SDS.now(end + 1, 1) = SDS.now(end) + P0.eventTime;
         P0.now = P0.now + P0.eventTime;
-%         P0.maleAge = P0.maleAge + P0.eventTime;
-%         P0.femaleAge = P0.femaleAge + P0.eventTime;
-%         %P0.meanAge = P0.meanAge + P0.eventTime;
-%         P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
-% %         P0.ageDifference = P0.maleAge - P0.femaleAge; % moved to birth
-% %         event
-%         
-%         P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
+        P0.maleAge = P0.maleAge + P0.eventTime;
+        P0.femaleAge = P0.femaleAge + P0.eventTime;
+        P0.meanAge = P0.meanAge + P0.eventTime;
         
+        P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
         
-        % P0.riskyBehaviour =  P0.meanAge + P0.ageDifference + P0.relationCount + P0.relationsTerm + P0.serodiscordant;        
-        %{
-        P0.meanAgeSex 
-        P0.ageDifferenceSex
-        P0.relationTypeSex
-        P0.relationCountSex
-        P0.serodiscordantSex
-        P0.disclosureSex 
-            %}
-       
-        P0.subset = P0.true;
-        P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:, ~P0.aliveFemales) = false;   
-        
-        % ******* 4A: Advance All Events *******
+        % ******* 4: Advance All Events *******
         for ii = 1 : P0.numberOfEvents
             P0.event(ii).advance(P0)
         end
-        
-        % ******* 4B: Update timedependent variables ********
-        P0.maleAge = P0.maleAge + P0.eventTime;
-        P0.femaleAge = P0.femaleAge + P0.eventTime;
-        %P0.meanAge = P0.meanAge + P0.eventTime;
-        P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
-%         P0.ageDifference = P0.maleAge - P0.femaleAge; % moved to birth
-%         event
-        
-        P0.timeSinceLast = P0.timeSinceLast + P0.eventTime;
-
         
         
         % ******* 5: Fire First Event *******
@@ -535,9 +446,19 @@ end
         
         P0.firedEvent(end + 1) = eventIdx;
         t = P0.now;
-        %if P0.now >= 5
-            %save P0.mat P0
-        %end
+        
+    end
+
+
+
+%% get
+    function SDS = modelHIV_get(SDS)
+        for ii = 1 : P0.numberOfEvents
+            P0.event(ii).P = feval(P0.event(ii).get, P0.now) ;
+        end
+        
+        SDS.P0 = P0;
+        
     end
 end
 
@@ -573,28 +494,28 @@ SDS = [];
 SDS.user_name = getenv('USERNAME');
 SDS.file_date = datestr(time);
 SDS.data_file = sprintf('data%s.m', datestr(time, 30));
+SDS.age_file = 'sa_2003.csv';
 SDS.model_function = mfilename;
 SDS.population_function = '';
 
-SDS.start_date = '01-Jan-1985';
-SDS.end_date = '31-Dec-2010';
+SDS.start_date = '01-Jan-1998';
+SDS.end_date = '31-Dec-2018';
 SDS.number_of_communities = 2;
 
-SDS.iteration_limit = 10000;
-SDS.number_of_males = 300;
-SDS.number_of_females = 300;
-SDS.initial_number_of_males = 200;
-SDS.initial_number_of_females = 200;
+SDS.iteration_limit = 1000000;
+SDS.number_of_males = 5;
+SDS.number_of_females = 5;
+SDS.initial_number_of_males = 5;
+SDS.initial_number_of_females = 5;
 SDS.number_of_community_members = floor(SDS.initial_number_of_males/2); % 4 communities
-SDS.sex_worker_proportion = 0.04;
+SDS.sex_worker_proportion = 0.03;
 SDS.number_of_relations = SDS.number_of_males*SDS.number_of_females;
 SDS.number_of_tests =  (SDS.number_of_males+SDS.number_of_females);
-SDS.number_of_ARV = (SDS.number_of_males+SDS.number_of_females);
+SDS.number_of_ARV = (SDS.number_of_males+SDS.number_of_females)*0.3;
 
 %SDS.float = 'single';           % e.g. 3.14 (32 bit floating point)
 SDS.float = 'double';           % e.g. 3.14 (64 bit floating point)
 SDS.integer = 'uint16';         % e.g. 3 (16 bit positive integer)
-%SDS.now = 0;        % [years]
 
 item = [' ', char(183), ' '];
 
@@ -648,46 +569,21 @@ SDS.females = mergeStruct(commonPrp, struct(...
 SDS.relations = struct('ID', [], 'time', []);
 
 
-% ******* Partnering parameters ********
-SDS.betaPars1 = 0.5;
-SDS.betaPars2 = 0.5;
-
-% ******* Individual age mixing parameters ********
-SDS.mu_individ_age = 10;       % population average of preferred age difference
-SDS.sigma_individ_age = 1;    % variability around this population average;
-
-SDS.mean_age_diff_factor = 0; % the average age difference factor is -1;
-SDS.range_age_diff_factor = 0; % it ranges between mean_age_diff_factor +/- (1/2) range_age_diff_factor; 
-
-SDS.mu_mean_age_growth = 1; % the population average of the mean age growth factor;
-SDS.sigma_mean_age_growth = 0; % variability around this population average;
-
-
 % ******* Fetch Available Events *******
 folder = [fileparts(which(mfilename)) '/events'];
-addpath(folder)
+if ~isdeployed
+    addpath(folder)
+end
+
 for thisFile = dir(fullfile(folder , 'event*.m'))'
     if strcmp(thisFile.name, 'eventTemplate.m')
         continue
-    end    
+    end
     [~, eventFile] = fileparts(thisFile.name);
     thisField = str2field(feval(eventFile, 'name'));
-    SDS.events.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
+    SDS.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
     %SDS.(thisField).comments = {''};
 end
-
-% ******* Fetch Available Interventions *******
-folder = [fileparts(which(mfilename)) '/interventions'];
-addpath(folder)
-for thisFile = dir(fullfile(folder , 'event*.m'))'
-    if strcmp(thisFile.name, 'eventTemplate.m')
-        continue
-    end    
-    [~, eventFile] = fileparts(thisFile.name);
-    thisField = str2field(feval(eventFile, 'name'));
-    SDS.interventions.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
-end
-
 end
 
 

@@ -32,7 +32,7 @@ end
         % ******* Function Handles *******
         P.weibullEventTime = spTools('handle', 'weibullEventTime');
         [P.enableAIDSmortality, thisMsg] = spTools('handle', 'AIDSmortality', 'enable');
-        [P.fireTest, thisMsg] = spTools('handle', 'Test', 'fire');
+       % [P.fireTest, thisMsg] = spTools('handle', 'Test', 'fire');
         
         % ******* Variables & Constants *******
         P.randBreastfeeding = rand(1, SDS.number_of_females);
@@ -150,6 +150,8 @@ end
         if isnan(time)
             time = 0;
         end
+        
+        P0.breastfeedingStop(mother) = min(latestBorn,P0.now)+time;
         
         survival = SDS.females.AIDSdeath(mother);
         timeHIVpos = SDS.females.HIV_positive(mother);
@@ -321,10 +323,10 @@ function [props, msg] = eventMTCT_properties
 
 props.probability_of_MTCT = {
     'HIV/AIDS stage'  'probability'
-    'prenatal and delivery'  0.2
-    'postnatal' 0.4
+    'prenatal and delivery'  0.25
+    'postnatal' 0.5
     };
-props.infectiousness_decreased_by_ARV = 0.5;
+props.infectiousness_decreased_by_ARV = 0.4;
 props.probability_of_breastfeeding = 0.9;
 props.HIV_positive_infants_survival_time={
     'scale' 'shape'

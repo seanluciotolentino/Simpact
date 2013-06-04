@@ -107,5 +107,3 @@ function name = eventAIDSmortality_name
 
 name = 'AIDS mortality';
 end
-
-%% test

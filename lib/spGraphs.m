@@ -706,10 +706,10 @@ for ii = 1 : numel(ReportingTimes)
     Cases = sum(Cases);
     
     HIVincidence(ii) = Cases / ExposureTime;
-%     CasesLL = (1/2)*chi2inv(alpha/2, 2*Cases);
-%     CasesUL = (1/2)*chi2inv(1-(alpha/2), 2*(Cases+1));
-%     HIVincidenceLL(ii) = CasesLL / ExposureTime;
-%     HIVincidenceUL(ii) = CasesUL / ExposureTime;
+    CasesLL = (1/2)*chi2inv(alpha/2, 2*Cases);
+    CasesUL = (1/2)*chi2inv(1-(alpha/2), 2*(Cases+1));
+    HIVincidenceLL(ii) = CasesLL / ExposureTime;
+    HIVincidenceUL(ii) = CasesUL / ExposureTime;
 
 end
 
@@ -750,8 +750,8 @@ linePrp.Parent = hAxes;
 % line(newYear, incidence*100, linePrp)
 
 line(ReportingTimes, HIVincidence*100, linePrp, 'Color', 'r')    
-% line(ReportingTimes, HIVincidenceLL*100, linePrp)  
-% line(ReportingTimes, HIVincidenceUL*100, linePrp)  
+line(ReportingTimes, HIVincidenceLL*100, linePrp)  
+line(ReportingTimes, HIVincidenceUL*100, linePrp)  
 
 
 xlabel(hAxes, 'time [years]')
@@ -788,17 +788,12 @@ end
 count = sum(SDS.relations.ID(:, SDS.index.male) ~= 0);
 maleAge = nan(1, count);
 femaleAge = nan(1, count);
-colourID = nan(1, count);
 
 for ii = 1 : count
     maleAge(ii) = SDS.relations.time(ii, SDS.index.start) - ...
         SDS.males.born(SDS.relations.ID(ii, SDS.index.male));
     femaleAge(ii) = SDS.relations.time(ii, SDS.index.start) - ...
         SDS.females.born(SDS.relations.ID(ii, SDS.index.female));
-
-    % testing colour coding for the ID of the men
-    colourID(ii) = SDS.relations.ID(ii, SDS.index.male);
-
 end
 
 figPrp.Name = 'Relations Formation Scatter';
@@ -806,8 +801,7 @@ figPrp.ToolBar = 'figure';
 hFig = fig(figPrp);
 hAxes = axes('Parent', hFig);
 
-%hScat = scatter(hAxes, maleAge, femaleAge, 30, colourID, 'filled', 'HitTest', 'off');
-hScat = scatter(hAxes, maleAge, femaleAge, 15, 'filled', 'HitTest', 'off');
+hScat = scatter(hAxes, femaleAge, maleAge, 4, 'HitTest', 'off');
 linePrp = [];
 linePrp.Color = 'r';
 linePrp.HitTest = 'off';
@@ -848,8 +842,8 @@ set(hAxes, 'ButtonDownFcn', @spGraphs_formationScatter_callback, ...
     'DataAspectRatio', [1 1 1], ...
     'XGrid', 'on', 'YGrid', 'on', 'XLim', lim, 'YLim', lim)
 title(hAxes, 'Click on a data point to see its properties')
-xlabel(hAxes, 'Male age')
-ylabel(hAxes, 'Female age ')
+xlabel(hAxes, 'female age')
+ylabel(hAxes, 'male age ')
 
 %zoom(hFig, 'on')
 

@@ -56,7 +56,7 @@ else % Tformation>T(1)
     end
     
 end
-if isnan(t)||~isreal(t)||t<0
+if isnan(t)|~
     t = Inf;
 end
 end
