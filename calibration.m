@@ -4,7 +4,7 @@ if ~isdir('calibration')
      mkdir('calibration');
 end
 %%
-n = 500;
+n = 50;
 %%
 for run = 0:3
 %%
@@ -26,7 +26,7 @@ SDS0.number_of_females = n*2;
 SDS0.number_of_community_members = floor(SDS0.initial_number_of_males/2); % 4 communities
 SDS0.sex_worker_proportion = 0.015;
 SDS0.number_of_relations = SDS0.number_of_males*SDS0.number_of_females;
-SDS0.HIV_introduction.number_of_introduced_HIV=20;
+SDS0.HIV_introduction.number_of_introduced_HIV=5;
 SDS0.ARV_treatment.ARV_program_start_time = 15;
 SDS0.HIV_transmission.sexual_behaviour_parameters{8} = log(1);
 SDS0.HIV_transmission.sexual_behaviour_parameters{1} = 3;
