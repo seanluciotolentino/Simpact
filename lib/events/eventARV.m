@@ -55,7 +55,7 @@ end
         msg = '';
         
         P = X;
-        P.enable = SDS.ARV_treatment.enable;
+        P.enable = SDS.events.ARV_treatment.enable;
         [P.setupTransmission, msg] = spTools('handle', 'eventTransmission', 'setup');
         [P.updateTransmission, msg] = spTools('handle', 'eventTransmission', 'update');
         [P.updateMTCT, msg] = spTools('handle', 'eventMTCT', 'update');

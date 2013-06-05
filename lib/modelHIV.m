@@ -120,8 +120,8 @@ end
         SDS.females.BCC_exposure(femaleRange) = 1;
         % ******* BCC Current Relations Factor ********
         %Using Discrete Value for 2 communities
-        SDS.males.current_relations_factor(maleRange) = SDS.formation.current_relations_factor;
-        SDS.females.current_relations_factor(femaleRange) = SDS.formation.current_relations_factor;
+        SDS.males.current_relations_factor(maleRange) = SDS.events.formation.current_relations_factor;
+        SDS.females.current_relations_factor(femaleRange) = SDS.events.formation.current_relations_factor;
         
         %Using Beta Distribution for 2 communities
         %{
@@ -134,39 +134,89 @@ end
         %}
         
         % ******* Partnering TEMP!!! *******
-        betaPars = [0.5, 0.7];
+        betaPars(1) = SDS.betaPars1;
+        betaPars(2) = SDS.betaPars2;        
+        
         partneringFcn = 'mean';
-        %         SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-        %         SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
-        %
-        partMales = repmat(SDS.males.partnering, SDS.number_of_females,1);
-        partFemales = repmat(SDS.females.partnering',1, SDS.number_of_males);
-        formationBCCfield = str2field(eventFormation('name'));
-        if isfield(SDS, formationBCCfield)
-            partneringFcn = SDS.(formationBCCfield).partnering_function.SelectedItem;
+        SDS.males.partnering = cast(betainv(rand(1, SDS.number_of_males, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        SDS.females.partnering = cast(betainv(rand(1, SDS.number_of_females, SDS.float), betaPars(1), betaPars(2)), SDS.float);
+        
+        [partMales, pathFemales] = ndgrid(SDS.males.partnering, SDS.females.partnering);
+        formationfield = str2field(eventFormation('name'));
+        if isfield(SDS, formationfield)
+            partneringFcn = SDS.events.(formationfield).partnering_function.SelectedItem;
         end
         switch partneringFcn
             case 'min'
-                P0.partnering = min(partMales, partFemales);
+                P0.partnering = min(partMales, pathFemales);
             case 'max'
-                P0.partnering = max(partMales, partFemales);
+                P0.partnering = max(partMales, pathFemales);
             case 'mean'
-                P0.partnering = (partMales + partFemales)/2;
+                P0.partnering = (partMales + pathFemales)/2;
             case 'product'
-                P0.partnering = partMales.*partFemales;
+                P0.partnering = partMales.*pathFemales;
         end
         
+        % ******* Individual age mixing parameters *******
+        % individual age difference preference (optimum)
+        SDS.males.preferred_age_difference = cast(normrnd(SDS.mu_individ_age,SDS.sigma_individ_age,SDS.number_of_males,1), SDS.float);
+        SDS.females.preferred_age_difference = cast(normrnd(SDS.mu_individ_age,SDS.sigma_individ_age,SDS.number_of_females,1), SDS.float);
+        [P0.pref_age_diffMales, P0.pref_age_diffFemales] = ndgrid(SDS.males.preferred_age_difference, SDS.females.preferred_age_difference);
         
-        % ******* Aging TEMP!!! *******
-        %         agesMale = empiricalage(SDS.initial_number_of_males, 65, 4);
-        %         SDS.males.born(maleRange) = cast(-agesMale, SDS.float);    % -years old
-        %         agesFemale = empiricalage(SDS.initial_number_of_females, 66, 4);
-        %         SDS.females.born(femaleRange) = cast(-agesFemale, SDS.float);% -years old
-        %         adjust = round(SDS.initial_number_of_males*0.015);
-        %         SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*2;
-        %         SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*2;
-        %
+        % individual age difference factor
+        ageDiffFactorFcn = SDS.interventions.AgeMixingChange.ageDiffFactorFcn;
+        SDS.males.ageDiffFactor = cast(malesOnes.*SDS.mean_age_diff_factor + (rand(1,SDS.number_of_males)-0.5)*SDS.range_age_diff_factor, SDS.float);
+        SDS.females.ageDiffFactor = cast(femalesOnes.*SDS.mean_age_diff_factor + (rand(1,SDS.number_of_females)-0.5)*SDS.range_age_diff_factor, SDS.float);
         
+        [ageDiffFactMales, ageDiffFactFemales] = ndgrid(SDS.males.ageDiffFactor, SDS.females.ageDiffFactor);
+
+        switch ageDiffFactorFcn
+            case 'min'
+                P0.agediff = min(ageDiffFactMales, ageDiffFactFemales);
+            case 'max'
+                P0.agediff = max(ageDiffFactMales, ageDiffFactFemales);
+            case 'mean'
+                P0.agediff = (ageDiffFactMales + ageDiffFactFemales)/2;
+            case 'product'
+                P0.agediff = -(ageDiffFactMales.*ageDiffFactFemales);
+        end
+        
+        % individual mean age growth factor
+        meanAgeGrowthFactorFcn = SDS.interventions.AgeMixingChange.meanAgeGrowthFactorFcn;
+        SDS.males.meanAgeGrowthFactor = cast(normrnd(SDS.mu_mean_age_growth,SDS.sigma_mean_age_growth,SDS.number_of_males,1), SDS.float);
+        SDS.females.meanAgeGrowthFactor = cast(normrnd(SDS.mu_mean_age_growth,SDS.sigma_mean_age_growth,SDS.number_of_females,1), SDS.float);
+        
+        [meanAgeGrowthFactMales, meanAgeGrowthFactFemales] = ndgrid(SDS.males.meanAgeGrowthFactor, SDS.females.meanAgeGrowthFactor);
+       
+        switch meanAgeGrowthFactorFcn
+            case 'min'
+                P0.meanagegrowth = min(meanAgeGrowthFactMales, meanAgeGrowthFactFemales);
+            case 'max'
+                P0.meanagegrowth = max(meanAgeGrowthFactMales, meanAgeGrowthFactFemales);
+            case 'mean'
+                P0.meanagegrowth = (meanAgeGrowthFactMales + meanAgeGrowthFactFemales)/2;
+            case 'product'
+                P0.meanagegrowth = meanAgeGrowthFactMales.*meanAgeGrowthFactFemales;
+        end
+        
+        % individual mean age dispersion growth factor
+        meanAgeDispersionGrowthFactorFcn = SDS.interventions.AgeMixingChange.meanAgeDispersionGrowthFactorFcn;
+        SDS.males.meanAgeDispersionGrowthFactor = cast(normrnd(SDS.mu_mean_age_dispersion_growth,SDS.sigma_mean_age_dispersion_growth,SDS.number_of_males,1), SDS.float);
+        SDS.females.meanAgeDispersionGrowthFactor = cast(normrnd(SDS.mu_mean_age_dispersion_growth,SDS.sigma_mean_age_dispersion_growth,SDS.number_of_females,1), SDS.float);
+        
+        [meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales] = ndgrid(SDS.males.meanAgeDispersionGrowthFactor, SDS.females.meanAgeDispersionGrowthFactor);
+       
+        switch meanAgeDispersionGrowthFactorFcn
+            case 'min'
+                P0.meanagedispersiongrowth = min(meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales);
+            case 'max'
+                P0.meanagedispersiongrowth = max(meanAgeDispersionGrowthFactMales, meanAgeDispersionGrowthFactFemales);
+            case 'mean'
+                P0.meanagedispersiongrowth = (meanAgeDispersionGrowthFactMales + meanAgeDispersionGrowthFactFemales)/2;
+            case 'product'
+                P0.meanagedispersiongrowth = meanAgeDispersionGrowthFactMales.*meanAgeDispersionGrowthFactFemales;
+        end
+
         ageMale = MonteCarloAgeSA(SDS.initial_number_of_males, 'man', SDS.age_file);
         SDS.males.born(maleRange) = cast(-ageMale, SDS.float);    % -years old
         ageFemale = MonteCarloAgeSA(SDS.initial_number_of_females, 'woman', SDS.age_file);
@@ -410,14 +460,14 @@ end
         
         % ******* 2: Find First Event & Its Entry *******
         [P0.eventTime, firstIdx] = min(P0.eventTimes);  % index into event times
-        P0.eventTime(~isreal(P0.eventTime)) = real(P0.eventTime);
-        if P0.eventTime <= 0
-            problem = find(P0.cumsum >= firstIdx, 1) - 1;
-            time = P0.eventTime;
-            %debugMsg 'eventTime == 0' %you can ignore this mention as present -Fei  08/17/2012
-            P0.eventTime = 0.0001;
-            %keyboard
-        end
+%         P0.eventTime(~isreal(P0.eventTime)) = real(P0.eventTime);
+%         if P0.eventTime < 0
+%             problem = find(P0.cumsum >= firstIdx, 1) - 1;
+%             time = P0.eventTime;
+%             debugMsg 'eventTime < 0' %you can ignore this mention as present -Fei  08/17/2012
+%             P0.eventTime = 0.0001;
+%             %keyboard
+%         end
         if ~isfinite(P0.eventTime)
             t = Inf;
             return
@@ -568,6 +618,20 @@ SDS.females = mergeStruct(commonPrp, struct(...
 % ******* Relations *******
 SDS.relations = struct('ID', [], 'time', []);
 
+% ******* Partnering parameters ********
+SDS.betaPars1 = 0.5;
+SDS.betaPars2 = 0.5;
+
+% ******* Individual age mixing parameters ********
+SDS.mu_individ_age = 10;       % population average of preferred age difference
+SDS.sigma_individ_age = 1;    % variability around this population average;
+
+SDS.mean_age_diff_factor = 0; % the average age difference factor is -1;
+SDS.range_age_diff_factor = 0; % it ranges between mean_age_diff_factor +/- (1/2) range_age_diff_factor; 
+
+SDS.mu_mean_age_growth = 1; % the population average of the mean age growth factor;
+SDS.sigma_mean_age_growth = 0; % variability around this population average;
+
 
 % ******* Fetch Available Events *******
 folder = [fileparts(which(mfilename)) '/events'];
@@ -581,8 +645,23 @@ for thisFile = dir(fullfile(folder , 'event*.m'))'
     end
     [~, eventFile] = fileparts(thisFile.name);
     thisField = str2field(feval(eventFile, 'name'));
-    SDS.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
+    SDS.events.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
     %SDS.(thisField).comments = {''};
+end
+
+% ******* Fetch Available Interventions *******
+folder = [fileparts(which(mfilename)) '/interventions'];
+if ~isdeployed
+    addpath(folder)
+end
+
+for thisFile = dir(fullfile(folder , 'event*.m'))'
+    if strcmp(thisFile.name, 'eventTemplate.m')
+        continue
+    end    
+    [~, eventFile] = fileparts(thisFile.name);
+    thisField = str2field(feval(eventFile, 'name'));
+    SDS.interventions.(thisField) = modelHIV_eventProps(modelHIV_event(eventFile));
 end
 end
 

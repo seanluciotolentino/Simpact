@@ -199,7 +199,7 @@ end
             P.enableMTCT(SDS, P0, P0.female);
         end
         
-        delay = rand*2*SDS.ARV_treatment.average_delay_after_AIDS...
+        delay = rand*2*SDS.events.ARV_treatment.average_delay_after_AIDS...
             +P.t(3,P0.index);
         P.enableARV(P0,delay);
         

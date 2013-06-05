@@ -149,7 +149,7 @@ end
             return
         end
         
-        if P0.now<SDS.ARV_treatment.ARV_program_start_time
+        if P0.now<SDS.events.ARV_treatment.ARV_program_start_time
             P.eventTimes(P0.index) = 1/P.monitoring_frequency;
         else
             % P0.now>=SDS.ARV_treatment.ARV_program_start_time
@@ -203,7 +203,7 @@ end
                     serodiscordant = serodiscordant|(P0.serodiscordant(P0.male, P0.female)&longterm);
                 end
             end
-           startTime = SDS.ARV_treatment.ARV_program_start_time;
+           startTime = SDS.events.ARV_treatment.ARV_program_start_time;
      
             if P0.now<=P.targetTime
                 coverage = interp1q([startTime,P.currentTime,P.targetTime]',[0,P.coverage,P.targetCoverage]',P0.now);
@@ -308,7 +308,7 @@ else
     P.rand(P0.index) =P.rand(P0.index) - P.intExpLinear(P.alpha(P0.index),P.beta0, P0.now - P.lastChange(P0.index), P0.now);
     age = P0.now - birth;
     ageFactor = interp1q([0 P.agePeak 100]',[0 P.ageFactor, 0 ]',age);
-    timeFactor = min(max(0, P0.now - SDS.ARV_treatment.ARV_program_start_time),15);
+    timeFactor = min(max(0, P0.now - SDS.events.ARV_treatment.ARV_program_start_time),15);
     timeFactor = timeFactor * P.timeFactor;
     P.alpha(P0.index) = P.baselineAlpha + P.genderFactor*gender + ageFactor +...
         P.concurrentFactor*relationCount + P.revisitFactor*(~isnan(testTime)) + timeFactor;

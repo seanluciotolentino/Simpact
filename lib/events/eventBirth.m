@@ -193,7 +193,7 @@ end
         %    empiricalExposure(1, llimit, ulimit, peak, SDS.(sex).community(ID));
        
         
-        SDS.(sex).current_relations_factor(ID) = SDS.formation.current_relations_factor;
+        SDS.(sex).current_relations_factor(ID) = SDS.events.formation.current_relations_factor;
             %empiricalCRF(1, betaPars, SDS.(sex).community(ID), SDS);  
         
         switch sex
