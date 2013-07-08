@@ -170,3 +170,4 @@ wim/*
 ~archive/*
 *.m~  #files on hold
 *.asv #files currently being edited
+*.mat
