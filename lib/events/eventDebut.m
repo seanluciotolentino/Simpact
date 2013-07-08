@@ -37,7 +37,7 @@ end
         
         P.eventTimes = inf(1, elements, SDS.float);
         debut_age = event.debut_age;
-        P.debut = debut_age + wblrnd(1,2,1,elements);
+        P.debut = debut_age + wblrnd(0.1,20000,1,elements); %wblrnd(1,2,1,elements);
         age = -[SDS.males.born, SDS.females.born];
         P.eventTimes = P.debut-age;
         P.eventTimes(P.eventTimes<0) = Inf;
