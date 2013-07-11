@@ -72,6 +72,8 @@ end
         P0.aliveFemales = femalesFalse;
         P0.aliveFemales(femaleRange) = true;
         P0.pregnant = femalesFalse;
+        P0.adultMales = malesFalse;
+        P0.adultFemales = femalesFalse;
         
         %P0.ANCtest = false; % false for general type testing, true for test at ANC
         
@@ -93,7 +95,16 @@ end
         SDS.males.current_relations_factor = malesNaN;
         SDS.females.current_relations_factor = femalesNaN;
         
-        
+        maleRange = 1:SDS.initial_number_of_males;
+        femaleRange = 1:SDS.initial_number_of_females;
+        ageMale = MonteCarloAgeSA(SDS.initial_number_of_males, 'man',SDS.age_file);%, '/Simpact/empirical_data/sa_2003.csv');
+        SDS.males.born(maleRange) = cast(-ageMale, SDS.float);    % -years old
+        ageFemale = MonteCarloAgeSA(SDS.initial_number_of_females, 'woman',SDS.age_file);%, '/Simpact/empirical_data/sa_2003.csv');
+        SDS.females.born(femaleRange) = cast(-ageFemale, SDS.float);% -years old
+        adjust = round(SDS.initial_number_of_males*0.004);
+        SDS.males.born((SDS.initial_number_of_males+1):(SDS.initial_number_of_males+adjust)) = -rand(1,adjust)*2;
+        SDS.females.born((SDS.initial_number_of_females+1):(SDS.initial_number_of_females+adjust)) = -rand(1,adjust)*2;
+    
         
         % ******* Communities TEMP!!! *******
         
@@ -266,7 +277,7 @@ end
         SDS.males.behaviour_factor = malesNaN;
         SDS.females.behaviour_factor = femalesFalse;
         
-        SDS.females.sex_worker = rand(1, SDS.number_of_females)<= SDS.sex_worker_proportion;
+        SDS.females.sex_worker = femalesFalse; %rand(1, SDS.number_of_females)<= SDS.sex_worker_proportion;
         
         SDS.tests.ID= zeros(SDS.number_of_tests,1, SDS.integer);
         SDS.tests.time = nan(SDS.number_of_tests,1, SDS.float);
@@ -277,10 +288,7 @@ end
         SDS.ARV.time = nan(SDS.number_of_ARV, 2, SDS.float);
         SDS.ARV.life_year_saved = nan(SDS.number_of_ARV, 1, SDS.float);
         
-        P0.birth = false;
-        P0.conception = false;
-        %%%%%%%%%%%%%%%%%
-        P0.ANC= false;
+        
         SDS.tests.typeANC = false(SDS.number_of_tests,1);
         %---------------------------------------------------------%
         
@@ -314,7 +322,8 @@ end
             repmat(P0.maleRelationCount, 1, SDS.number_of_females) - ...
             repmat(P0.femaleRelationCount, SDS.number_of_males, 1));
         
-        P0.transactionSex = repmat(SDS.females.sex_worker, SDS.number_of_males, 1);
+        P0.fsw = SDS.females.sex_worker;
+        P0.transactionSex = repmat(P0.fsw, SDS.number_of_males, 1);
         
         P0.maleAge = -repmat(SDS.males.born(:), 1, SDS.number_of_females);
         P0.femaleAge = -repmat(SDS.females.born(:)', SDS.number_of_males, 1);
@@ -358,6 +367,9 @@ end
             SDS.males.HIV_positive, SDS.females.HIV_positive
             ]';
         P0.ARV = [malesFalse,femalesFalse];
+        P0.birth = false;
+        P0.conception = false;
+        P0.ANC= false;        
         P0.introduce = false;
         P0.optionB = femalesFalse;
         P0.thisPregnantTime = nan(1, SDS.number_of_females);
