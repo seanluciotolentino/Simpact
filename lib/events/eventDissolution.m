@@ -186,8 +186,8 @@ end
         P0.subset(P0.male,:) = true;
         P0.subset(:,P0.female) = true;
         P0.subset = P0.subset&~P0.current&isfinite(P.eventTimes);
-        P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:,~P0.aliveFemales) = false;
+        P0.subset(~P0.adultMales, :) = false;
+        P0.subset(:,~P0.adultFemales) = false;
        
         Pc = P.intExpLinear(P.alpha(P0.subset),P.beta(P0.subset),...
             0,min(P0.timeSinceLast(P0.subset),P0.now-P.time0(P0.subset)));
