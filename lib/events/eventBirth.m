@@ -198,7 +198,7 @@ end
         
         switch sex
             case 'males'
-                %P0.alive(ID, :) = true;
+                P0.alive(ID, :) = true;
                 P0.aliveMales(ID) = true;
                 %P0.malecommID = repmat(SDS.males.commID(:), 1, SDS.number_of_females);
                 P0.maleCommunity(ID, :) = SDS.males.community(ID);
@@ -212,7 +212,7 @@ end
                 P0.index = P0.female;
                 
             case 'females'
-                %P0.alive(:, ID) = true;
+                P0.alive(:, ID) = true;
                 P0.aliveFemales(ID) = true;
                 %P0.femalecommID = repmat(SDS.females.commID(:)', SDS.number_of_males, 1);
                 P0.femaleCommunity(:, ID) = SDS.females.community(ID);
@@ -222,7 +222,8 @@ end
         end
         
         
-        Pform.index = find(P0.subset);
+        %Pform.index = find(P0.subset);   % Fei deleted this line in her
+        %update on 7 July 2013
         P.enableMortality(Pmort)            % uses P0.index
         
         mother = SDS.(sex).mother(ID);
