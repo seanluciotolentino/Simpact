@@ -31,16 +31,18 @@ end
         
         % ******* Function Handles *******
         [P.enableFormation, thisMsg] = spTools('handle', 'eventFormation', 'enable');
+        [P.enableFSW, thisMsg] = spTools('handle', 'eventFSW', 'enable');
+        
         if ~isempty(thisMsg)
             msg = sprintf('%s%s\n', msg, thisMsg);
         end
         
         P.eventTimes = inf(1, elements, SDS.float);
-        debut_age = event.debut_age;
-        P.debut = debut_age + wblrnd(0.1,20000,1,elements); %wblrnd(1,2,1,elements);
+        %debut_age = event.debut_age;
+        P.debut = event.debut_age + wblrnd(5,2,1,elements); %event.debut_age; %debut_age + wblrnd(0.1,20000,1,elements); %wblrnd(1,2,1,elements);
         age = -[SDS.males.born, SDS.females.born];
         P.eventTimes = P.debut-age;
-        P.eventTimes(P.eventTimes<0) = Inf;
+        P.eventTimes(P.eventTimes<0) = rand(1,sum(P.eventTimes<0))/1000;   %P.eventTimes(P.eventTimes<0) = Inf;
     end
 
 
@@ -87,14 +89,18 @@ end
        
           if P0.index<= SDS.number_of_males
                 ID = P0.index;
-                P0.timeSinceLast(ID, :) = 0;
-                P0.subset(ID, :) = true;
-                P0.maleAge(ID,:) = P0.now - SDS.males.born(ID);
+                P0.adultMales(ID) = true;
+                P0.timeSinceLast(ID,P0.adultFemales) = 0;                
+                P0.subset(ID,P0.adultFemales) = true;
+                P0.maleAge(ID,P0.adultFemales) = P0.now - SDS.males.born(ID);
           else
                 ID = P0.index- SDS.number_of_males;
-                P0.timeSinceLast(ID, :) = 0;
-                P0.subset(:, ID) = true;
-                P0.femaleAge(:,ID) = P0.now - SDS.females.born(ID);
+                P0.adultFemales(ID) = true;
+                P0.adultMales = P0.now-SDS.males.born>=P.debut(SDS.number_of_males+1:end);
+                P0.timeSinceLast(P0.adultMales,ID) = 0;
+                P0.subset(P0.adultFemales, ID) = true;
+                P0.femaleAge(P0.adultFemales,ID) = P0.now - SDS.females.born(ID);
+                P.enableFSW(SDS,P0,ID);
           end
         
             P0.meanAge = (P0.maleAge + P0.femaleAge)/2;
@@ -111,6 +117,7 @@ end
             
             
             P0 = P.enableFormation(P0);
+            P0.subset = false(SDS.number_of_males, SDS.number_of_females);%
 
             P.eventTimes(P0.index) = Inf;
     end
