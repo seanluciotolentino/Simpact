@@ -110,6 +110,11 @@ end
         [P.enableTransmission, thisMsg] = spTools('handle', 'eventTransmission', 'enable');
         
         [P.updateTest, thisMsg] = spTools('handle', 'eventTest', 'update');
+        if P.beta == 0
+            P.expLinear = spTools('handle', 'expConstant');
+            P.intExpLinear = spTools('handle', 'intExpConstant');
+ 
+        end
         
     end
 
@@ -166,21 +171,22 @@ end
 
 %% enable
     function P0 = eventFormation_enable(P0)
-        % Invoked by eventDissolution_fire, eventBirth_fire
+        % Invoked by eventDissolution_fire, eventDebut_fire
         % Use P0.subset
         if ~P.enable
             return
         end
         
         P0.subset = P0.subset&~P0.current&~isfinite(P.eventTimes);
-        P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:,~P0.aliveFemales) = false;
+        P0.subset(~P0.adultMales, :) = false;
+        P0.subset(:,~P0.adultFemales) = false;
         P.rand(P0.subset) = P.rand0toInf(1,sum(sum(P0.subset)));
         subsetRelationsCount=repmat(P0.femaleRelationCount, size(P0.subset, 1), 1);
         P.alpha(P0.subset) = P.baseline_factor*P0.partnering(P0.subset) + ...
-            P.current_relations_factor.*P0.relationCount(P0.subset) + ...
-            P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
-            P.female_current_relations_factor*subsetRelationsCount(P0.subset)+...
+            P.current_relations_factor.*P0.relationCount(P0.subset).*(~P0.transactionSex(P0.subset)) + ...
+            P.current_relations_factor_fsw.*P0.relationCount(P0.subset).*P0.transactionSex(P0.subset) + ...
+            P.current_relations_difference_factor*P0.relationCountDifference(P0.subset).*(~P0.transactionSex(P0.subset))+ ...
+            P.female_current_relations_factor*subsetRelationsCount(P0.subset).*(~P0.transactionSex(P0.subset))+...
             P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ...
         P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
         P0.agediff(P0.subset).*exp(-(P0.meanAge(P0.subset) - P.age_limit).*P0.meanagedispersiongrowth(P0.subset)).*...
@@ -203,8 +209,8 @@ end
         active = isfinite(P.alpha) & ~P0.current; %isfinite(P.alpha); P.alpha is also finite for the current relationship
         A = exp(P.alpha(active));
         CFH = sum(sum(A));  % cumulative formation hazard
-        % activeMales = P0.aliveMales'&(P.age_limit - P0.maleAge(:,1))<=0;
-        % activeFemales = P0.aliveFemales & (P.age_limit - P0.femaleAge(1,:))<=0;
+        activeMales = P0.aliveMales'&(P.age_limit - P0.maleAge(:,1))<=0;
+        activeFemales = P0.aliveFemales & (P.age_limit - P0.femaleAge(1,:))<=0;
         % actives = sum(activeMales)+sum(activeFemales);
         PTR = P.PTR;
         CFHtarget = sqrt(sum(sum(active))) * PTR; %(actives/2) * PTR;
@@ -212,6 +218,8 @@ end
         A = A * CFHcorrectionfactor;
         activeAlpha = log(A);    
         P.alpha(active) = activeAlpha;
+        %P0.subset(activeMales,activeFemales)=true; % Added by Fei in her update on 9 July 2013
+
         
         end
         P.eventTimes(P0.subset) = ...
@@ -228,8 +236,8 @@ end
         P0.subset(P0.male,:) = true;
         P0.subset(:,P0.female) = true;
         P0.subset = P0.subset&~P0.current&isfinite(P.eventTimes);
-        P0.subset(~P0.aliveMales, :) = false;
-        P0.subset(:,~P0.aliveFemales) = false;
+        P0.subset(~P0.adultMales, :) = false;
+        P0.subset(:,~P0.adultFemales) = false;
         
         Pc = P.intExpLinear(P.alpha(P0.subset),P.beta(P0.subset),...
             0,min(P0.timeSinceLast(P0.subset),P0.now-P.time0(P0.subset)));
@@ -243,14 +251,17 @@ end
             P0.femaleRelationCount(P0.female) = P0.femaleRelationCount(P0.female) + 1;
             P0.relationCount(P0.male,:) = P0.relationCount(P0.male,:) + 1;
             P0.relationCount(:,P0.female) = P0.relationCount(:,P0.female) + 1;
-            
-            femaleRelationMatrix = repmat(P0.femaleRelationCount, SDS.number_of_males, 1);
-            
-            P0.relationCountDifference = abs(...
+        end
+        femaleRelationMatrix = repmat(P0.femaleRelationCount, SDS.number_of_males, 1);
+        P0.relationCountDifference = abs(...
                 repmat(P0.maleRelationCount,1, SDS.number_of_females) - ...
                 femaleRelationMatrix);
+            %femaleRelationMatrix = repmat(P0.femaleRelationCount, SDS.number_of_males, 1);
             
-        end
+            %P0.relationCountDifference = abs(...
+             %   repmat(P0.maleRelationCount,1, SDS.number_of_females) - ...
+              %  femaleRelationMatrix);
+            
         if type ==0
             % dissolution
             P0.maleRelationCount(P0.male) = P0.maleRelationCount(P0.male) - 1;
@@ -258,22 +269,23 @@ end
             P0.relationCount(P0.male,:) = P0.relationCount(P0.male,:) - 1;
             P0.relationCount(:,P0.female) = P0.relationCount(:,P0.female) - 1;
             femaleRelationMatrix = repmat(P0.femaleRelationCount, SDS.number_of_males, 1);
-            
+        end
+
             P0.relationCountDifference = abs(...
                 repmat(P0.maleRelationCount, 1, SDS.number_of_females) - ...
                 femaleRelationMatrix);
             
-        end
         P.alpha(P0.subset) = P.baseline_factor*P0.partnering(P0.subset) + ...
-            P.current_relations_factor.*P0.relationCount(P0.subset) + ...
-            P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) + ...
-            P.female_current_relations_factor*femaleRelationMatrix(P0.subset)+...
+            P.current_relations_factor.*P0.relationCount(P0.subset).*(~P0.transactionSex(P0.subset))+ ...
+            P.current_relations_factor_fsw.*P0.relationCount(P0.subset).*P0.transactionSex(P0.subset) + ...
+            P.current_relations_difference_factor*P0.relationCountDifference(P0.subset) .*(~P0.transactionSex(P0.subset))+ ...
+            P.female_current_relations_factor*femaleRelationMatrix(P0.subset).*(~P0.transactionSex(P0.subset))+...
             P.mean_age_factor*(P0.meanAge(P0.subset) - P.age_limit) + ...
-        P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
-        P0.agediff(P0.subset).*exp(-(P0.meanAge(P0.subset) - P.age_limit).*P0.meanagedispersiongrowth(P0.subset)).*...
-        (abs(P0.ageDifference(P0.subset) - (P0.pref_age_diffMales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) + ...
-         abs(P0.ageDifference(P0.subset) - (P0.pref_age_diffFemales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) ) + ...       
-        P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
+            P.last_change_factor*P0.timeSinceLast(P0.subset) + ...
+            P0.agediff(P0.subset).*exp(-(P0.meanAge(P0.subset) - P.age_limit).*P0.meanagedispersiongrowth(P0.subset)).*...
+            (abs(P0.ageDifference(P0.subset) - (P0.pref_age_diffMales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) + ...
+            abs(P0.ageDifference(P0.subset) - (P0.pref_age_diffFemales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) ) + ...
+            P.transaction_sex_factor*P0.transactionSex(P0.subset) + ...
             P.community_difference_factor*abs(P0.communityDifference(P0.subset));   
 %         P0.agediff(P0.subset).*((abs(P0.ageDifference(P0.subset) - ...
 %         (P0.pref_age_diffMales(P0.subset) + (P0.meanAge(P0.subset) - P.age_limit).*P0.meanagegrowth(P0.subset))) ...
@@ -290,8 +302,8 @@ end
            
     A = exp(P.alpha(active));
     CFH = sum(sum(A));  % cumulative formation hazard
-    % activeMales = P0.aliveMales'&(P.age_limit - P0.maleAge(:,1))<=0;
-    % activeFemales = P0.aliveFemales & (P.age_limit - P0.femaleAge(1,:))<=0;
+    activeMales = P0.aliveMales'&(P.age_limit - P0.maleAge(:,1))<=0;
+    activeFemales = P0.aliveFemales & (P.age_limit - P0.femaleAge(1,:))<=0;
     % actives = sum(activeMales)+sum(activeFemales);
     PTR = P.PTR;
     CFHtarget = sqrt(sum(sum(active))) * PTR; %(actives/2) * PTR;
@@ -299,6 +311,8 @@ end
     A = A * CFHcorrectionfactor;
     activeAlpha = log(A);
     P.alpha(active) = activeAlpha;  % Let's check if P.alpha is the same across simulations
+        %P0.subset(activeMales,activeFemales)=true;
+
         end
         P.eventTimes(P0.subset) = ...
             P.expLinear(P.alpha(P0.subset),P.beta(P0.subset), 0, P.rand(P0.subset));
@@ -335,6 +349,7 @@ msg = '';
 
 props.baseline_factor = log(0.1);
 props.current_relations_factor =log(0.18);
+props.current_relations_factor_fsw = log(1);
 props.male_current_relations_factor =log(1);
 props.female_current_relations_factor =log(1);
 props.current_relations_difference_factor =log(1);
