@@ -1,13 +1,13 @@
 function calibrationwithagemixing
-
+tic
 if ~isdir('calibration')
      mkdir('calibration');
 end
 %%
 n = 100; % 200;
 %%
-runs = 1;%81; % This is the number of scenarios (3^4)
-reps = 1; % This is the number of times each scenario is repeated
+runs = 81; % This is the number of scenarios (3^4)
+reps = 10; % This is the number of times each scenario is repeated
 
 repvector = repmat(1:reps, 1, runs);
 %%
@@ -88,7 +88,7 @@ SDS0.events.male_circumcision.enable = 0;
 SDS0.events.birth.enable = 1;
 SDS0.events.conception.enable = 1;
 SDS0.events.conception.fertility_rate_from_data_file = 0;
-SDS0.events.conception.constant_fertility_parameter = 0.5;
+SDS0.events.conception.constant_fertility_parameter = 0.9;
 
 
 SDS0.events.ARV_treatment.ARV_program_start_time = 99999;  % These simulations don't involve ART
@@ -104,7 +104,7 @@ SDS0.events.formation.turn_over_rate = 0.5; % Keeping partner turnover rate fixe
 SDS0.events.non_AIDS_mortality.mortality_reference_year = 2002;
 SDS0.events.non_AIDS_mortality.Weibull_shape_parameter = shape;
 SDS0.events.non_AIDS_mortality.Weibull_scale_parameter = scale;
-SDS0.events.formation.current_relations_factor = log(0.5);
+%SDS0.events.formation.current_relations_factor = log(0.5);
 
 maleRange = 1:SDS0.initial_number_of_males;
 femaleRange = 1:SDS0.initial_number_of_females;
@@ -149,24 +149,26 @@ SDS0.sigma_mean_age_dispersion_growth = 0; % variability around this population 
 % Running the simulation
 SDS = spRun('start',SDS0);
 
-filename = sprintf('SDS%d04July.mat',run);
+%filename = sprintf('SDS%d04July.mat',run);
 
-save(filename, 'SDS')
+%save(filename, 'SDS')
 
 % Plotting the age mixing scatter
-spGraphs('formationScatter',SDS)
+%spGraphs('formationScatter',SDS)
 
 % Plotting the concurrency time trend
 %spGraphs('concurrencyPrevalence',SDS)
 
 %spGraphs('prevalenceIncidence', SDS)
-spGraphs('formedRelations',SDS)
+%spGraphs('formedRelations',SDS)
 
-spGraphs('Demographics',SDS)
+%spGraphs('Demographics',SDS)
 
 
 % Exporting the simulation output
 exportCSV(SDS,'calibration',100*scenario+rep,'4July');
+toc
+display(run)
 end
 %%
 % SDS0.formation.current_relations_factor = log(0.5);
