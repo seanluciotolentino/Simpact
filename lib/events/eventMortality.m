@@ -208,6 +208,7 @@ end
             % ******* Male Passed Away *******
             P0.male = P0.index;
             P0.aliveMales(P0.male) = false;
+            P0.adultMales(P0.male) = false;
             SDS.males.deceased(P0.male) = P0.now;
             P.blockCircumcision(P0)             % uses P0.male
             
@@ -226,6 +227,8 @@ end
             % ******* Female Passed Away *******
             P0.female = P0.index - SDS.number_of_males;
             P0.aliveFemales(P0.female) = false;
+            P0.adultFemales(P0.female) = false;
+            P0.fsw(P0.female)=false;
             SDS.females.deceased(P0.female) = P0.now;
             P.abortBirth(P0)                    % uses P0.female
             P.blockANC(P0)
